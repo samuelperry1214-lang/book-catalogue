@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Library</title>
+  <meta name="description" content="A personal reading catalogue">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header>
+    <div class="container">
+      <div class="header-content">
+        <h1>My Library</h1>
+        <p>A personal reading catalogue</p>
+      </div>
+      <div id="header-stats"></div>
+    </div>
+  </header>
+
+  <nav class="filters" aria-label="Filter books">
+    <div class="container">
+      <div class="filters-row">
+        <div id="genre-pills" role="group" aria-label="Filter by genre"></div>
+        <select id="filter-year" aria-label="Filter by year">
+          <option value="">All years</option>
+        </select>
+        <select id="filter-rating" aria-label="Filter by rating">
+          <option value="">All ratings</option>
+          <option value="5">★★★★★ only</option>
+          <option value="4">★★★★ and above</option>
+          <option value="3">★★★ and above</option>
+        </select>
+        <input
+          type="search"
+          id="filter-author"
+          placeholder="Search author…"
+          aria-label="Filter by author"
+          autocomplete="off"
+        >
+        <button id="clear-filters" aria-label="Clear all filters">Clear filters</button>
+        <span id="result-count" aria-live="polite"></span>
+      </div>
+    </div>
+  </nav>
+
+  <main id="catalogue" class="container" aria-label="Book catalogue"></main>
+
+  <!-- Modal -->
+  <div
+    id="modal"
+    class="modal-overlay hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-title"
+  >
+    <div class="modal-content">
+      <button id="modal-close" aria-label="Close">&times;</button>
+      <div class="modal-body">
+        <div class="modal-cover-wrap">
+          <img id="modal-cover" src="" alt="">
+        </div>
+        <div class="modal-info">
+          <span id="modal-genre" class="modal-genre-tag"></span>
+          <h2 id="modal-title"></h2>
+          <p id="modal-author" class="modal-author"></p>
+          <div id="modal-stars" class="modal-stars"></div>
+          <p id="modal-year" class="modal-year"></p>
+          <div id="modal-review" class="modal-review"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
