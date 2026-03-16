@@ -117,7 +117,7 @@ const books = [
 
   { id: 21, title: "Free", author: "Lea Ypi", rating: 5, yearRead: 2025, genre: "Memoir",
     isbn13: "9780393867732", isbn: "0393867730",
-    coverUrl: "https://covers.openlibrary.org/b/id/13611344-L.jpg",
+    coverUrl: "https://m.media-amazon.com/images/S/compressed.photo.goodreads.com/books/1636348840i/58085227.jpg",
     review: "" },
 
   { id: 22, title: "Chronicle of a Death Foretold", author: "Gabriel García Márquez", rating: 4, yearRead: 2025, genre: "Fiction",
@@ -197,7 +197,7 @@ const books = [
 
   { id: 37, title: "Growth", author: "Daniel Susskind", rating: 5, yearRead: 2024, genre: "Economics",
     isbn13: "", isbn: "",
-    coverUrl: "",
+    coverUrl: "https://m.media-amazon.com/images/S/compressed.photo.goodreads.com/books/1698866423l/201269395.jpg",
     review: "" },
 
   { id: 38, title: "Failed State", author: "Sam Freedman", rating: 5, yearRead: 2024, genre: "Politics & Current Affairs",
@@ -287,7 +287,7 @@ const books = [
 
   { id: 55, title: "Norwegian Wood", author: "Haruki Murakami", rating: 3, yearRead: 2022, genre: "Fiction",
     isbn13: "", isbn: "",
-    coverUrl: "https://covers.openlibrary.org/b/id/2237620-L.jpg",
+    coverUrl: "https://m.media-amazon.com/images/S/compressed.photo.goodreads.com/books/1713542603i/11297.jpg",
     review: "" },
 
   { id: 56, title: "Open Water", author: "Caleb Azumah Nelson", rating: 5, yearRead: 2022, genre: "Fiction",
