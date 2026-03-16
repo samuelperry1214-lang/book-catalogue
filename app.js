@@ -52,7 +52,7 @@ const books = [
 
   { id: 8,  title: "V13", author: "Emmanuel Carrère", rating: 5, yearRead: 2026, genre: "History & Biography",
     isbn13: "9782818056066", isbn: "2818056063",
-    coverUrl: "https://covers.openlibrary.org/b/id/13536857-L.jpg",
+    coverUrl: "https://m.media-amazon.com/images/S/compressed.photo.goodreads.com/books/1658657540i/61675059.jpg",
     review: "" },
 
   { id: 9,  title: "Revolution Française", author: "Sophie Pedder", rating: 5, yearRead: 2026, genre: "Politics & Current Affairs",
@@ -77,7 +77,7 @@ const books = [
 
   { id: 13, title: "Too Big to Fail", author: "Andrew Ross Sorkin", rating: 4, yearRead: 2025, genre: "Economics",
     isbn13: "9780670021253", isbn: "0670021253",
-    coverUrl: "https://covers.openlibrary.org/b/id/8728309-L.jpg",
+    coverUrl: "https://m.media-amazon.com/images/S/compressed.photo.goodreads.com/books/1347504190i/6687247.jpg",
     review: `Rich and compelling portrait of the crisis's dramatis personae, though I found it most gripping to start with, before I did slightly tire of the repetitive format: stressed bankers trying to salvage a deal to save their firm // Paulson tearing his hair out while trying to save their firms.\n\nWould personally have appreciated more politics — 'After some additional compromise on Sunday, legislation had been drafted that was acceptable to all the parties and was now being put to a vote' p.501. This resolves the seemingly interminable debate among congress people that we read left Paulson dry heaving on p.497.` },
 
   { id: 14, title: "Parfit", author: "David Edmonds", rating: 5, yearRead: 2025, genre: "Philosophy & Ethics",
@@ -92,7 +92,7 @@ const books = [
 
   { id: 16, title: "The New Machiavelli", author: "Jonathan Powell", rating: 4, yearRead: 2025, genre: "Politics & Current Affairs",
     isbn13: "9781847921222", isbn: "1847921221",
-    coverUrl: "https://covers.openlibrary.org/b/id/12894749-L.jpg",
+    coverUrl: "https://m.media-amazon.com/images/S/compressed.photo.goodreads.com/books/1320551396i/8404422.jpg",
     review: "" },
 
   { id: 17, title: "Rodham", author: "Curtis Sittenfeld", rating: 5, yearRead: 2025, genre: "Fiction",
@@ -137,7 +137,7 @@ const books = [
 
   { id: 25, title: "Speaking Out", author: "Ed Balls", rating: 4, yearRead: 2025, genre: "Politics & Current Affairs",
     isbn13: "", isbn: "",
-    coverUrl: "https://covers.openlibrary.org/b/id/10187323-L.jpg",
+    coverUrl: "https://m.media-amazon.com/images/S/compressed.photo.goodreads.com/books/1470751077i/31386764.jpg",
     review: "" },
 
   { id: 26, title: "Cogs and Monsters", author: "Diane Coyle", rating: 5, yearRead: 2025, genre: "Economics",
