@@ -52,7 +52,7 @@ const books = [
 
   { id: 8,  title: "V13", author: "Emmanuel Carrère", rating: 5, yearRead: 2026, genre: "History & Biography",
     isbn13: "9782818056066", isbn: "2818056063",
-    coverUrl: "https://m.media-amazon.com/images/S/compressed.photo.goodreads.com/books/1658657540i/61675059.jpg",
+    coverUrl: "https://blackwells.com/jacket/500x500/9781911717058.jpg",
     review: "" },
 
   { id: 9,  title: "Revolution Française", author: "Sophie Pedder", rating: 5, yearRead: 2026, genre: "Politics & Current Affairs",
@@ -112,7 +112,7 @@ const books = [
 
   { id: 20, title: "Beyond Happy", author: "Mark Fabian", rating: 5, yearRead: 2025, genre: "Philosophy & Ethics",
     isbn13: "9781835010518", isbn: "1835010512",
-    coverUrl: "https://m.media-amazon.com/images/S/compressed.photo.goodreads.com/books/1733160151i/222160573.jpg",
+    coverUrl: "https://blackwells.com/jacket/500x500/9781835010518.jpg",
     review: "" },
 
   { id: 21, title: "Free", author: "Lea Ypi", rating: 5, yearRead: 2025, genre: "Memoir",
