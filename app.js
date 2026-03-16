@@ -68,7 +68,7 @@ const books = [
 
   { id: 22, title: "Chronicle of a Death Foretold", author: "Gabriel García Márquez", rating: 4, yearRead: 2025, genre: "Fiction", isbn13: "9781400034710", isbn: "140003471X", review: "" },
 
-  { id: 23, title: "Red Plenty", author: "Francis Spufford", rating: 5, yearRead: 2025, genre: "Fiction", isbn13: "", isbn: "", review: "" },
+  { id: 23, title: "Red Plenty", author: "Francis Spufford", rating: 5, yearRead: 2025, genre: "Fiction", isbn13: "", isbn: "", coverUrl: "https://covers.openlibrary.org/b/id/7397789-L.jpg", review: "" },
 
   { id: 24, title: "What Money Can't Buy", author: "Michael J. Sandel", rating: 4, yearRead: 2025, genre: "Philosophy & Ethics", isbn13: "9780374203030", isbn: "0374203032", review: "" },
 
@@ -92,7 +92,7 @@ const books = [
 
   { id: 34, title: "Say Nothing", author: "Patrick Radden Keefe", rating: 5, yearRead: 2025, genre: "History & Biography", isbn13: "9780385521314", isbn: "0385521316", review: "" },
 
-  { id: 35, title: "My Brilliant Friend", author: "Elena Ferrante", rating: 4, yearRead: 2024, genre: "Fiction", isbn13: "", isbn: "", review: "" },
+  { id: 35, title: "My Brilliant Friend", author: "Elena Ferrante", rating: 4, yearRead: 2024, genre: "Fiction", isbn13: "", isbn: "", coverUrl: "https://covers.openlibrary.org/b/id/13772133-L.jpg", review: "" },
 
   { id: 36, title: "Intermezzo", author: "Sally Rooney", rating: 5, yearRead: 2024, genre: "Fiction", isbn13: "9780374602635", isbn: "0374602638", review: "" },
 
@@ -116,9 +116,9 @@ const books = [
 
   { id: 46, title: "Follow the Money", author: "Paul Johnson", rating: 5, yearRead: 2024, genre: "Economics", isbn13: "9781408714010", isbn: "1408714019", review: "" },
 
-  { id: 47, title: "The Remains of the Day", author: "Kazuo Ishiguro", rating: 3, yearRead: 2023, genre: "Fiction", isbn13: "", isbn: "", review: "" },
+  { id: 47, title: "The Remains of the Day", author: "Kazuo Ishiguro", rating: 3, yearRead: 2023, genre: "Fiction", isbn13: "", isbn: "", coverUrl: "https://covers.openlibrary.org/b/id/95742-L.jpg", review: "" },
 
-  { id: 48, title: "American Prometheus", author: "Kai Bird & Martin J. Sherwin", rating: 5, yearRead: 2023, genre: "History & Biography", isbn13: "", isbn: "", review: "" },
+  { id: 48, title: "American Prometheus", author: "Kai Bird & Martin J. Sherwin", rating: 5, yearRead: 2023, genre: "History & Biography", isbn13: "", isbn: "", coverUrl: "https://covers.openlibrary.org/b/id/6460516-L.jpg", review: "" },
 
   { id: 49, title: "Foster", author: "Claire Keegan", rating: 5, yearRead: 2023, genre: "Fiction", isbn13: "9780571255658", isbn: "0571255655", review: "" },
 
@@ -128,19 +128,19 @@ const books = [
 
   { id: 52, title: "Deep Down", author: "Imogen West-Knights", rating: 4, yearRead: 2023, genre: "Fiction", isbn13: "9780349727080", isbn: "0349727082", review: "" },
 
-  { id: 53, title: "My Struggle, Book 1", author: "Karl Ove Knausgård", rating: 4, yearRead: 2023, genre: "Fiction", isbn13: "", isbn: "", review: "" },
+  { id: 53, title: "My Struggle, Book 1", author: "Karl Ove Knausgård", rating: 4, yearRead: 2023, genre: "Fiction", isbn13: "", isbn: "", coverUrl: "https://covers.openlibrary.org/b/id/9159180-L.jpg", review: "" },
 
   { id: 54, title: "Priestdaddy", author: "Patricia Lockwood", rating: 5, yearRead: 2022, genre: "Memoir", isbn13: "9781594633737", isbn: "1594633738", review: "" },
 
-  { id: 55, title: "Norwegian Wood", author: "Haruki Murakami", rating: 3, yearRead: 2022, genre: "Fiction", isbn13: "", isbn: "", review: "" },
+  { id: 55, title: "Norwegian Wood", author: "Haruki Murakami", rating: 3, yearRead: 2022, genre: "Fiction", isbn13: "", isbn: "", coverUrl: "https://covers.openlibrary.org/b/id/2237620-L.jpg", review: "" },
 
   { id: 56, title: "Open Water", author: "Caleb Azumah Nelson", rating: 5, yearRead: 2022, genre: "Fiction", isbn13: "9780241448779", isbn: "0241448778", review: "" },
 
   { id: 57, title: "Beautiful World, Where Are You", author: "Sally Rooney", rating: 4, yearRead: 2021, genre: "Fiction", isbn13: "9780374602604", isbn: "0374602603", review: "" },
 
-  { id: 58, title: "What I Talk About When I Talk About Running", author: "Haruki Murakami", rating: 4, yearRead: 2021, genre: "Sport", isbn13: "", isbn: "", review: "" },
+  { id: 58, title: "What I Talk About When I Talk About Running", author: "Haruki Murakami", rating: 4, yearRead: 2021, genre: "Sport", isbn13: "", isbn: "", coverUrl: "https://covers.openlibrary.org/b/id/13185830-L.jpg", review: "" },
 
-  { id: 59, title: "Americanah", author: "Chimamanda Ngozi Adichie", rating: 4, yearRead: 2021, genre: "Fiction", isbn13: "", isbn: "", review: "" },
+  { id: 59, title: "Americanah", author: "Chimamanda Ngozi Adichie", rating: 4, yearRead: 2021, genre: "Fiction", isbn13: "", isbn: "", coverUrl: "https://covers.openlibrary.org/b/id/8474037-L.jpg", review: "" },
 
   { id: 60, title: "One of Them", author: "Musa Okwonga", rating: 4, yearRead: 2021, genre: "Memoir", isbn13: "9781783529681", isbn: "1783529687", review: "" },
 
@@ -257,16 +257,11 @@ function renderCard(book) {
     >
       <div class="cover-wrap">
         <div class="cover-placeholder" aria-hidden="true">${initial}</div>
-        ${coverIsbn
-          ? `<img class="cover-img" alt="${escHtml(book.title)}"
-              data-isbn13="${book.isbn13}" data-isbn="${book.isbn}"
-              data-title="${escHtml(book.title)}" data-author="${escHtml(book.author)}"
-              loading="lazy">`
-          : `<img class="cover-img no-isbn" alt="${escHtml(book.title)}"
-              data-isbn13="" data-isbn=""
-              data-title="${escHtml(book.title)}" data-author="${escHtml(book.author)}"
-              loading="lazy">`
-        }
+        <img class="cover-img" alt="${escHtml(book.title)}"
+          data-isbn13="${book.isbn13 || ''}" data-isbn="${book.isbn || ''}"
+          data-title="${escHtml(book.title)}" data-author="${escHtml(book.author)}"
+          ${book.coverUrl ? `data-coverurl="${escHtml(book.coverUrl)}"` : ''}
+          loading="lazy">
         ${hasReview ? `<div class="review-badge" title="Has review">✍</div>` : ''}
       </div>
       <div class="card-info">
@@ -328,8 +323,15 @@ function loadAllCovers() {
 }
 
 function loadCover(img) {
-  const { isbn13, isbn, title, author } = img.dataset;
+  const { isbn13, isbn, title, author, coverurl } = img.dataset;
   const id = isbn13 || isbn;
+
+  if (coverurl) {
+    img.src = coverurl;
+    img.onload = () => img.classList.add('loaded');
+    img.onerror = () => tryGoogleBooks(img);
+    return;
+  }
 
   if (id) {
     img.src = `https://covers.openlibrary.org/b/isbn/${id}-L.jpg`;
@@ -407,15 +409,17 @@ function openModal(id) {
       else tryGoogleBooks(modalCover);
     };
     modalCover.onerror = () => tryGoogleBooks(modalCover);
-    modalCover.dataset.isbn13 = book.isbn13;
-    modalCover.dataset.isbn   = book.isbn;
-    modalCover.dataset.title  = book.title;
-    modalCover.dataset.author = book.author;
+    modalCover.dataset.isbn13   = book.isbn13   || '';
+    modalCover.dataset.isbn     = book.isbn     || '';
+    modalCover.dataset.title    = book.title;
+    modalCover.dataset.author   = book.author;
+    modalCover.dataset.coverurl = book.coverUrl || '';
   } else {
-    modalCover.dataset.isbn13 = '';
-    modalCover.dataset.isbn   = '';
-    modalCover.dataset.title  = book.title;
-    modalCover.dataset.author = book.author;
+    modalCover.dataset.isbn13   = '';
+    modalCover.dataset.isbn     = '';
+    modalCover.dataset.title    = book.title;
+    modalCover.dataset.author   = book.author;
+    modalCover.dataset.coverurl = book.coverUrl || '';
     tryGoogleBooks(modalCover);
   }
 
