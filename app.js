@@ -673,6 +673,7 @@ function switchLibraryTab(section) {
   document.getElementById('lectures-section').classList.toggle('hidden', section !== 'lectures');
   document.getElementById('podcasts-section').classList.toggle('hidden', section !== 'podcasts');
   document.getElementById('essays-section').classList.toggle('hidden', section !== 'essays');
+  window.scrollTo(0, 0);
 }
 
 function handleSearchResultClick(type, section, id) {
@@ -1360,7 +1361,10 @@ function setupEventListeners() {
   });
   document.getElementById('modal-close').addEventListener('click', closeModal);
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeModal();
+    if (e.key === 'Escape') {
+      if (!document.getElementById('add-modal').classList.contains('hidden')) closeAddModal();
+      else closeModal();
+    }
   });
 
   // Library section tabs
@@ -1395,10 +1399,159 @@ function setupEventListeners() {
 }
 
 // ─────────────────────────────────────────
+// LOCAL STORAGE — USER-ADDED ITEMS
+// ─────────────────────────────────────────
+
+const STORAGE_KEY = 'library_user_items';
+
+function loadUserItems() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  } catch { return []; }
+}
+
+function saveUserItems(items) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+}
+
+function mergeUserItems() {
+  const saved = loadUserItems();
+  const libraryPodcasts = saved.filter(i => i._dest === 'library' && i.type === 'podcast');
+  const libraryEssays   = saved.filter(i => i._dest === 'library' && i.type === 'essay');
+  const wantItems       = saved.filter(i => i._dest === 'want');
+
+  libraryPodcasts.forEach(p => { if (!podcasts.find(x => x.id === p.id)) podcasts.push(p); });
+  libraryEssays.forEach(e => { if (!essays.find(x => x.id === e.id)) essays.push(e); });
+  wantItems.forEach(w => { if (!wishlist.find(x => x.id === w.id)) wishlist.push(w); });
+}
+
+function addUserItem(item) {
+  const saved = loadUserItems();
+  saved.push(item);
+  saveUserItems(saved);
+}
+
+// ─────────────────────────────────────────
+// ADD FORM
+// ─────────────────────────────────────────
+
+function detectType(url) {
+  const u = url.toLowerCase();
+  const podcastDomains = ['spotify.com', 'podcasts.apple.com', 'overcast.fm',
+    'pocketcasts.com', 'anchor.fm', 'buzzsprout.com', 'simplecast.com',
+    'podbean.com', 'soundcloud.com', 'acast.com', 'transistor.fm', 'podfollow.com'];
+  if (podcastDomains.some(d => u.includes(d))) return 'podcast';
+  return 'essay';
+}
+
+function openAddModal(defaultType) {
+  const typeEl = document.getElementById('add-type');
+  if (defaultType) typeEl.value = defaultType;
+  updateAuthorLabel();
+  document.getElementById('add-modal').classList.remove('hidden');
+  document.body.classList.add('modal-open');
+  setTimeout(() => document.getElementById('add-url').focus(), 50);
+}
+
+function closeAddModal() {
+  document.getElementById('add-modal').classList.add('hidden');
+  document.body.classList.remove('modal-open');
+  // Reset form
+  ['add-url', 'add-title', 'add-author', 'add-notes'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('add-year').value = new Date().getFullYear();
+}
+
+function updateAuthorLabel() {
+  const type = document.getElementById('add-type').value;
+  document.getElementById('add-author-label').textContent =
+    type === 'podcast' ? 'Podcast / Show' : 'Author';
+  document.getElementById('add-author').placeholder =
+    type === 'podcast' ? 'Podcast name…' : 'Author name…';
+}
+
+function handleAddSubmit() {
+  const url    = document.getElementById('add-url').value.trim();
+  const type   = document.getElementById('add-type').value;
+  const dest   = document.getElementById('add-dest').value;
+  const title  = document.getElementById('add-title').value.trim();
+  const author = document.getElementById('add-author').value.trim();
+  const year   = parseInt(document.getElementById('add-year').value) || new Date().getFullYear();
+  const notes  = document.getElementById('add-notes').value.trim();
+
+  if (!title) {
+    document.getElementById('add-title').focus();
+    return;
+  }
+
+  // Generate a unique ID (timestamp-based, won't clash with hardcoded items)
+  const id = Date.now();
+
+  let item;
+  if (type === 'podcast') {
+    item = { id, type: 'podcast', _dest: dest, title, show: author, episodeUrl: url, coverUrl: '', yearListened: year, notes };
+  } else {
+    item = { id, type: 'essay', _dest: dest, title, author, url, yearRead: year, notes };
+  }
+
+  addUserItem(item);
+
+  // Push into the live array and re-render
+  if (dest === 'library') {
+    if (type === 'podcast') { podcasts.push(item); renderPodcastsSection(); }
+    else                    { essays.push(item);   renderEssaysSection(); }
+  } else {
+    wishlist.push(item);
+    renderWantSection();
+  }
+
+  renderStats();
+  renderHomeCards();
+  closeAddModal();
+
+  // Navigate to where the item was added
+  if (dest === 'library') {
+    showView('library');
+    switchLibraryTab(type === 'podcast' ? 'podcasts' : 'essays');
+  } else {
+    showView('want');
+  }
+}
+
+function setupAddForm() {
+  document.getElementById('add-item-btn').addEventListener('click', () => openAddModal());
+
+  document.getElementById('add-modal-close').addEventListener('click', closeAddModal);
+  document.getElementById('add-modal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeAddModal();
+  });
+
+  document.getElementById('add-url').addEventListener('input', e => {
+    const detected = detectType(e.target.value);
+    document.getElementById('add-type').value = detected;
+    updateAuthorLabel();
+  });
+
+  document.getElementById('add-type').addEventListener('change', updateAuthorLabel);
+
+  document.getElementById('add-submit').addEventListener('click', handleAddSubmit);
+
+  // Also close on Escape (already handled globally but needs to target this modal too)
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !document.getElementById('add-modal').classList.contains('hidden')) {
+      // Allow Enter in textarea, submit on Enter elsewhere
+      if (document.activeElement.tagName !== 'TEXTAREA') handleAddSubmit();
+    }
+  });
+}
+
+// ─────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
+  mergeUserItems();
   renderStats();
   renderHomeCards();
   renderGenrePills();
@@ -1409,4 +1562,6 @@ document.addEventListener('DOMContentLoaded', () => {
   renderEssaysSection();
   renderWantSection();
   setupEventListeners();
+  setupAddForm();
+  document.getElementById('add-year').value = new Date().getFullYear();
 });

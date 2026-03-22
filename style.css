@@ -1122,3 +1122,139 @@ body.modal-open { overflow: hidden; }
   background: transparent !important;
   color: var(--wood);
 }
+
+/* ─────────────────────────────────────────
+   GENERAL HIDDEN (fixes tab switching)
+───────────────────────────────────────── */
+.hidden { display: none !important; }
+
+/* ─────────────────────────────────────────
+   SECTION TABS ROW (tabs + add button)
+───────────────────────────────────────── */
+.section-tabs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.7rem;
+}
+
+/* Override the border on .section-tabs itself now it's inside the row */
+.section-tabs-row .section-tabs {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.add-item-btn {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: var(--radius);
+  padding: 0.28rem 0.85rem;
+  font-size: 0.78rem;
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.add-item-btn:hover { background: var(--accent); color: #fff; }
+
+/* ─────────────────────────────────────────
+   ADD ITEM MODAL
+───────────────────────────────────────── */
+.add-modal-content {
+  max-width: 480px !important;
+}
+
+.add-modal-body {
+  padding: 2rem 2rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.add-modal-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+}
+
+.add-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1;
+}
+
+.add-field-row {
+  flex-direction: row;
+  gap: 1rem;
+}
+
+.add-field label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.add-optional {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.75rem;
+}
+
+.add-field input[type="text"],
+.add-field input[type="url"],
+.add-field input[type="number"],
+.add-field select,
+.add-field textarea {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.45rem 0.75rem;
+  font-size: 0.88rem;
+  font-family: inherit;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+
+.add-field input:focus,
+.add-field select:focus,
+.add-field textarea:focus {
+  border-color: var(--accent);
+}
+
+.add-field textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.add-submit {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.6rem 1.5rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s;
+  align-self: flex-end;
+  margin-top: 0.5rem;
+}
+
+.add-submit:hover { background: var(--accent-hover); }
+.add-submit:disabled { opacity: 0.5; cursor: not-allowed; }
