@@ -387,10 +387,10 @@ const essays = [
 const podcasts = [
   {
     id: 1,
-    title: "Adam Tooze on the Global Economy",  // Update title to match the specific episode you listened to
+    title: "Adam Tooze on the Global Economy",  // Update title to match the specific episode
     show: "The Ezra Klein Show",
     episodeUrl: "", // Paste the Spotify or NYT link to the specific episode here
-    coverUrl: "https://megaphone.imgix.net/podcasts/14a1e05a-c4f1-11e9-8b5c-b7afa7e5f787/image/EzraKleinShow_WEB_3000x3000.jpg",
+    coverUrl: "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/97/18/74/97187459-b4e3-1009-7ce1-09d1c3b11f57/mza_6988448395986408361.jpg/1200x1200bf.webp",
     yearListened: 2026,
     notes: ""
   },
@@ -399,7 +399,7 @@ const podcasts = [
     title: "Brave New Welfare",
     show: "High Resolution",
     episodeUrl: "", // Add the episode link here — search "High Resolution Brave New Welfare" on Spotify/Apple Podcasts
-    coverUrl: "",
+    coverUrl: "", // Add the show's cover art URL here
     yearListened: 2026,
     notes: ""
   },
@@ -408,7 +408,7 @@ const podcasts = [
     title: "Stefan Dercon on Development and Global Poverty",  // Update to the exact episode title
     show: "Oxford Policy Pod",
     episodeUrl: "", // Add the episode link here — search "Oxford Policy Pod Stefan Dercon" on Spotify/Apple Podcasts
-    coverUrl: "",
+    coverUrl: "https://is1-ssl.mzstatic.com/image/thumb/Podcasts115/v4/8f/cd/1a/8fcd1af9-1297-2d3c-55ab-c4ae7d2a7e12/mza_14298392996531818522.png/1200x1200bf.webp",
     yearListened: 2026,
     notes: ""
   },
@@ -419,10 +419,18 @@ const podcasts = [
 // ─────────────────────────────────────────
 
 const wishlist = [
-  // Add items to your reading list here:
-  // Books:    { id: 1, type: 'book',    title: "...", author: "...", coverUrl: "", isbn13: "", isbn: "", notes: "" }
-  // Lectures: { id: 2, type: 'lecture', title: "...", channel: "...", youtubeId: "...", notes: "" }
-  // Essays:   { id: 3, type: 'essay',   title: "...", author: "...", url: "https://...", notes: "" }
+  {
+    id: 101,
+    type: 'lecture',
+    title: "What Do Journalists Owe the Open Society?",
+    channel: "St Edmund Hall, Oxford",
+    youtubeId: "qzZrdeudMXQ",
+    notes: "Stephen Bush's Philip Geddes Memorial Lecture, March 2026. Argues journalism risks failing its democratic purpose by prioritising partisan outcomes over informing voters about the real stakes of elections."
+  },
+  // Add more items here:
+  // Books:    { id: 102, type: 'book',    title: "...", author: "...", coverUrl: "", isbn13: "", isbn: "", notes: "" }
+  // Lectures: { id: 103, type: 'lecture', title: "...", channel: "...", youtubeId: "...", notes: "" }
+  // Essays:   { id: 104, type: 'essay',   title: "...", author: "...", url: "https://...", notes: "" }
 ];
 
 // ─────────────────────────────────────────
@@ -1378,6 +1386,11 @@ function setupEventListeners() {
   document.getElementById('nav-library').addEventListener('click', () => showView('library'));
   document.getElementById('nav-want').addEventListener('click', () => showView('want'));
 
+  // Back buttons (delegated — works for both views)
+  document.querySelectorAll('.back-btn').forEach(btn => {
+    btn.addEventListener('click', () => showView(btn.dataset.target || 'home'));
+  });
+
   // Header title → home
   document.getElementById('home-link').addEventListener('click', () => {
     document.getElementById('home-search').value = '';
@@ -1521,6 +1534,10 @@ function handleAddSubmit() {
 
 function setupAddForm() {
   document.getElementById('add-item-btn').addEventListener('click', () => openAddModal());
+  document.getElementById('add-item-btn-want').addEventListener('click', () => {
+    openAddModal();
+    document.getElementById('add-dest').value = 'want';
+  });
 
   document.getElementById('add-modal-close').addEventListener('click', closeAddModal);
   document.getElementById('add-modal').addEventListener('click', e => {

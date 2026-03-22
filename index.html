@@ -58,6 +58,12 @@
   <!-- ─── LIBRARY VIEW ─── -->
   <div id="view-library" class="view hidden">
 
+    <div class="view-back-bar">
+      <div class="container">
+        <button class="back-btn" data-target="home">← Home</button>
+      </div>
+    </div>
+
     <nav class="filters" aria-label="Filter books">
       <div class="container">
         <div class="section-tabs-row">
@@ -102,6 +108,12 @@
 
   <!-- ─── WANT TO READ/LISTEN VIEW ─── -->
   <div id="view-want" class="view hidden">
+    <div class="view-back-bar">
+      <div class="container view-back-bar-inner">
+        <button class="back-btn" data-target="home">← Home</button>
+        <button class="add-item-btn" id="add-item-btn-want">+ Add</button>
+      </div>
+    </div>
     <main id="want-section" class="container" aria-label="Reading list"></main>
   </div>
 
