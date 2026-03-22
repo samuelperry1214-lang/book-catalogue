@@ -15,41 +15,94 @@
   <header>
     <div class="container">
       <div class="header-content">
-        <h1>My Library</h1>
+        <h1><button id="home-link" class="home-link">My Library</button></h1>
       </div>
       <div id="header-stats"></div>
     </div>
   </header>
 
-  <nav class="filters" aria-label="Filter books">
+  <!-- ─── HOME VIEW ─── -->
+  <div id="view-home" class="view">
     <div class="container">
-      <div class="filters-row">
-        <div id="genre-pills" role="group" aria-label="Filter by genre"></div>
-        <select id="filter-year" aria-label="Filter by year">
-          <option value="">All years</option>
-        </select>
-        <select id="filter-rating" aria-label="Filter by rating">
-          <option value="">All ratings</option>
-          <option value="5">★★★★★ only</option>
-          <option value="4">★★★★ and above</option>
-          <option value="3">★★★ and above</option>
-        </select>
+
+      <div class="home-search-wrap">
         <input
           type="search"
-          id="filter-author"
-          placeholder="Search author…"
-          aria-label="Filter by author"
+          id="home-search"
+          placeholder="Search books, lectures, essays…"
+          aria-label="Search all items"
           autocomplete="off"
         >
-        <button id="clear-filters" aria-label="Clear all filters">Clear filters</button>
-        <span id="result-count" aria-live="polite"></span>
       </div>
+
+      <div id="home-results" class="home-results hidden" aria-live="polite" aria-label="Search results"></div>
+
+      <nav class="home-nav" id="home-nav" aria-label="Library sections">
+        <button class="home-card" id="nav-library" aria-label="Open Library">
+          <span class="home-card-eyebrow">Explore</span>
+          <span class="home-card-title">Library</span>
+          <span class="home-card-sub">Books · Lectures · Podcasts · Essays</span>
+          <span id="home-count-library" class="home-card-count"></span>
+        </button>
+        <button class="home-card" id="nav-want" aria-label="Open Reading List">
+          <span class="home-card-eyebrow">Coming up</span>
+          <span class="home-card-title">Reading List</span>
+          <span class="home-card-sub">Want to Read &amp; Listen</span>
+          <span id="home-count-want" class="home-card-count"></span>
+        </button>
+      </nav>
+
     </div>
-  </nav>
+  </div>
 
-  <main id="catalogue" class="container" aria-label="Book catalogue"></main>
+  <!-- ─── LIBRARY VIEW ─── -->
+  <div id="view-library" class="view hidden">
 
-  <!-- Modal -->
+    <nav class="filters" aria-label="Filter books">
+      <div class="container">
+        <div class="section-tabs" role="tablist" aria-label="Library sections">
+          <button class="section-tab active" data-section="books" role="tab" aria-selected="true">Books</button>
+          <button class="section-tab" data-section="lectures" role="tab" aria-selected="false">Lectures</button>
+          <button class="section-tab" data-section="podcasts" role="tab" aria-selected="false">Podcasts</button>
+          <button class="section-tab" data-section="essays" role="tab" aria-selected="false">Essays</button>
+        </div>
+        <div class="filters-row" id="book-filters">
+          <div id="genre-pills" role="group" aria-label="Filter by genre"></div>
+          <select id="filter-year" aria-label="Filter by year">
+            <option value="">All years</option>
+          </select>
+          <select id="filter-rating" aria-label="Filter by rating">
+            <option value="">All ratings</option>
+            <option value="5">★★★★★ only</option>
+            <option value="4">★★★★ and above</option>
+            <option value="3">★★★ and above</option>
+          </select>
+          <input
+            type="search"
+            id="filter-author"
+            placeholder="Search author…"
+            aria-label="Filter by author"
+            autocomplete="off"
+          >
+          <button id="clear-filters" aria-label="Clear all filters">Clear filters</button>
+          <span id="result-count" aria-live="polite"></span>
+        </div>
+      </div>
+    </nav>
+
+    <main id="catalogue" class="container" aria-label="Book catalogue"></main>
+    <main id="lectures-section" class="container section-panel hidden" aria-label="Lectures"></main>
+    <main id="podcasts-section" class="container section-panel hidden" aria-label="Podcasts"></main>
+    <main id="essays-section" class="container section-panel hidden" aria-label="Essays"></main>
+
+  </div>
+
+  <!-- ─── WANT TO READ/LISTEN VIEW ─── -->
+  <div id="view-want" class="view hidden">
+    <main id="want-section" class="container" aria-label="Reading list"></main>
+  </div>
+
+  <!-- ─── MODAL ─── -->
   <div
     id="modal"
     class="modal-overlay hidden"
@@ -70,6 +123,7 @@
           <div id="modal-stars" class="modal-stars"></div>
           <p id="modal-year" class="modal-year"></p>
           <div id="modal-review" class="modal-review"></div>
+          <a id="modal-link" class="modal-link hidden" href="#" target="_blank" rel="noopener noreferrer"></a>
         </div>
       </div>
     </div>

@@ -609,3 +609,516 @@ body.modal-open { overflow: hidden; }
 
   .genre-label { font-size: 1.1rem; }
 }
+
+/* ─────────────────────────────────────────
+   SECTION TABS (Books / Lectures / Essays)
+───────────────────────────────────────── */
+.section-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.7rem;
+}
+
+.section-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.82rem;
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.section-tab:hover {
+  color: var(--text);
+}
+
+.section-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.section-panel { padding-top: 3rem; padding-bottom: 5rem; }
+.section-panel.hidden { display: none; }
+
+/* ─────────────────────────────────────────
+   ITEM GRID (shared for lectures & essays)
+───────────────────────────────────────── */
+.item-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem 1.25rem;
+}
+
+/* ─────────────────────────────────────────
+   LECTURE CARD
+───────────────────────────────────────── */
+.cover-wrap--video {
+  aspect-ratio: 16 / 9 !important;
+  background: #1A1208;
+}
+
+.cover-wrap--video .cover-placeholder {
+  font-size: 2rem;
+  background: linear-gradient(145deg, #2A1F12 0%, #1A1208 100%);
+  color: var(--wood);
+}
+
+.play-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0);
+  transition: background 0.18s ease;
+  z-index: 2;
+}
+
+.play-overlay::after {
+  content: '';
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 10px 0 10px 18px;
+  border-color: transparent transparent transparent rgba(255,255,255,0.85);
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+  transform: translateX(2px);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.item-card:hover .play-overlay {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.item-card:hover .play-overlay::after {
+  opacity: 1;
+}
+
+/* ─────────────────────────────────────────
+   ESSAY CARD
+───────────────────────────────────────── */
+.cover-wrap--essay {
+  aspect-ratio: 2 / 3;
+  background: linear-gradient(145deg, #EDE5D5 0%, #D8CBAF 100%);
+}
+
+.cover-placeholder--essay {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 4rem;
+  color: var(--wood);
+  opacity: 0.5;
+  background: transparent !important;
+  line-height: 1;
+  padding-top: 0.2em;
+}
+
+/* Substack badge */
+.source-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  z-index: 3;
+}
+
+.source-badge--substack {
+  background: #FF6719;
+  color: #fff;
+  font-family: Georgia, serif;
+  font-style: italic;
+}
+
+/* ─────────────────────────────────────────
+   SHARED ITEM CARD (lectures & essays)
+───────────────────────────────────────── */
+.item-card {
+  cursor: pointer;
+  border-radius: var(--radius);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  position: relative;
+}
+
+.item-card:hover {
+  transform: translateY(-5px);
+  z-index: 2;
+}
+
+.item-card:hover .cover-wrap {
+  box-shadow: var(--shadow-hover);
+}
+
+.item-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: var(--radius);
+}
+
+/* ─────────────────────────────────────────
+   EMPTY SECTION STATE
+───────────────────────────────────────── */
+.empty-section {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-style: italic;
+  font-family: Georgia, serif;
+}
+
+.empty-section strong {
+  display: block;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.2rem;
+  font-style: italic;
+  color: var(--wood);
+  margin-bottom: 0.5rem;
+}
+
+/* ─────────────────────────────────────────
+   MODAL LINK BUTTON
+───────────────────────────────────────── */
+.modal-link {
+  display: inline-block;
+  margin-top: 1.2rem;
+  padding: 0.5rem 1.2rem;
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--radius);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: background 0.15s;
+}
+
+.modal-link:hover { background: var(--accent-hover); }
+.modal-link.hidden { display: none; }
+
+/* Modal cover aspect override for lectures */
+.modal-content.modal--lecture .modal-cover-wrap {
+  aspect-ratio: 16 / 9;
+  width: 240px;
+}
+
+@media (max-width: 768px) {
+  .item-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1.2rem 1rem;
+  }
+
+  .modal-content.modal--lecture .modal-cover-wrap {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+  }
+}
+
+@media (max-width: 480px) {
+  .item-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  }
+}
+
+/* ─────────────────────────────────────────
+   VIEWS
+───────────────────────────────────────── */
+.view { display: block; }
+.view.hidden { display: none; }
+
+/* ─────────────────────────────────────────
+   HOME LINK (header h1 button)
+───────────────────────────────────────── */
+.home-link {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+  color: #F4EEE2;
+  text-align: left;
+}
+
+.home-link:hover { color: var(--wood); }
+
+/* ─────────────────────────────────────────
+   HOME VIEW
+───────────────────────────────────────── */
+#view-home .container {
+  padding-top: 4rem;
+  padding-bottom: 5rem;
+}
+
+.home-search-wrap {
+  max-width: 540px;
+  margin: 0 auto 3rem;
+}
+
+.home-search-wrap input[type="search"] {
+  width: 100%;
+  height: 48px;
+  font-size: 0.95rem;
+  padding: 0 1.2rem;
+  border-radius: 2rem;
+  border: 1.5px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.home-search-wrap input[type="search"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(140, 21, 21, 0.1);
+}
+
+/* ─── Nav cards ─── */
+.home-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.home-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--wood);
+  border-radius: 3px;
+  padding: 2.5rem 2rem;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-top-color 0.18s;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-family: inherit;
+}
+
+.home-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+  border-top-color: var(--accent);
+}
+
+.home-card-eyebrow {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.home-card-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.1;
+  margin-top: 0.1rem;
+}
+
+.home-card-sub {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+.home-card-count {
+  display: inline-block;
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(140, 21, 21, 0.07);
+  border: 1px solid rgba(140, 21, 21, 0.15);
+  border-radius: 1rem;
+  padding: 0.2rem 0.7rem;
+  align-self: flex-start;
+}
+
+/* ─── Home search results ─── */
+.home-results {
+  max-width: 820px;
+  margin: 0 auto 2.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: var(--shadow-hover);
+  overflow: hidden;
+}
+
+.home-results.hidden { display: none; }
+
+.home-results-header {
+  padding: 0.75rem 1.2rem;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  font-weight: 700;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-alt);
+}
+
+.home-result-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.2rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.12s;
+  text-align: left;
+  width: 100%;
+  background: transparent;
+  border-left: none;
+  border-right: none;
+  font-family: inherit;
+}
+
+.home-result-item:last-child { border-bottom: none; }
+.home-result-item:hover { background: var(--bg-alt); }
+
+.home-result-thumb {
+  width: 36px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 2px;
+  flex-shrink: 0;
+  background: var(--bg-alt);
+}
+
+.home-result-thumb--video {
+  height: 36px;
+  background: #1A1208;
+}
+
+.home-result-thumb--essay {
+  height: 36px;
+  background: linear-gradient(145deg, #EDE5D5, #D8CBAF);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.1rem;
+  color: var(--wood);
+}
+
+.home-result-info { flex: 1; min-width: 0; }
+
+.home-result-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-result-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.1rem;
+}
+
+.home-result-type {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.home-no-results {
+  padding: 1.5rem 1.2rem;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-style: italic;
+  text-align: center;
+}
+
+/* ─────────────────────────────────────────
+   WANT TO READ / LISTEN VIEW
+───────────────────────────────────────── */
+#want-section {
+  padding-top: 3rem;
+  padding-bottom: 5rem;
+}
+
+.want-type-section {
+  margin-bottom: 4rem;
+}
+
+/* Wishlist card — same base as book/item card but bookmark badge instead of stars */
+.wish-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 22px;
+  height: 22px;
+  background: var(--wood);
+  color: #fff;
+  border-radius: 2px 2px 0 0;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  z-index: 3;
+  clip-path: polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%);
+}
+
+/* ─────────────────────────────────────────
+   RESPONSIVE — HOME
+───────────────────────────────────────── */
+@media (max-width: 600px) {
+  .home-nav {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+  }
+
+  .home-card { padding: 2rem 1.5rem; }
+  .home-card-title { font-size: 1.5rem; }
+}
+
+/* ─────────────────────────────────────────
+   PODCAST CARD
+───────────────────────────────────────── */
+.cover-wrap--podcast {
+  aspect-ratio: 1 / 1;
+  background: linear-gradient(145deg, #2A1F12 0%, #1A1208 100%);
+}
+
+.cover-placeholder--podcast {
+  font-size: 2.2rem;
+  background: transparent !important;
+  color: var(--wood);
+}

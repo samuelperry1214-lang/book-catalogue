@@ -337,6 +337,95 @@ const books = [
 ];
 
 // ─────────────────────────────────────────
+// LECTURES DATA
+// ─────────────────────────────────────────
+
+const lectures = [
+  // To fill in a YouTube ID: search the title on YouTube and copy the ID from the URL (the part after ?v=)
+  {
+    id: 1,
+    title: "Are Revolutions Justified?",
+    channel: "LSE",
+    youtubeId: "wuMJTLOaCb4",
+    courseUrl: "https://www.lse.ac.uk/events/are-revolutions-justified",
+    yearWatched: 2026,
+    notes: "Lea Ypi's inaugural Ralph Miliband lecture at LSE, January 2026. Revisits moralist vs. legalist arguments about revolution and offers an alternative grounded in a theory of collective moral progress."
+  },
+  {
+    id: 2,
+    title: "Market Humanism: Towards a New Paradigm for the Economy and Economics",
+    channel: "Oxford Martin School",
+    youtubeId: "tHmKHwdZ9OY",
+    courseUrl: "https://www.oxfordmartin.ox.ac.uk/events/market-humanism",
+    yearWatched: 2026,
+    notes: "Eric Beinhocker and Nick Hanauer at the Oxford Martin School, March 2026. Launching their forthcoming book Market Humanism — a synthesis of modern economics, philosophy, and complex systems theory."
+  },
+  {
+    id: 3,
+    title: "Introduction to Political Philosophy: What is Political Philosophy?",
+    channel: "YaleCourses",
+    youtubeId: "", // Search "Yale PLSC 114 Lecture 1 Steven Smith" on YouTube
+    courseUrl: "https://oyc.yale.edu/political-science/plsc-114/lecture-1",
+    yearWatched: 2026,
+    notes: "Yale PLSC 114 — find the specific 'What is a State?' lecture on the YaleCourses YouTube channel."
+  },
+];
+
+// ─────────────────────────────────────────
+// ESSAYS DATA
+// ─────────────────────────────────────────
+
+const essays = [
+  // Add essays here:
+  // { id: 1, title: "...", author: "...", url: "https://...", yearRead: 2026, notes: "" },
+];
+
+// ─────────────────────────────────────────
+// PODCASTS DATA
+// ─────────────────────────────────────────
+
+const podcasts = [
+  {
+    id: 1,
+    title: "Adam Tooze on the Global Economy",  // Update title to match the specific episode you listened to
+    show: "The Ezra Klein Show",
+    episodeUrl: "", // Paste the Spotify or NYT link to the specific episode here
+    coverUrl: "https://megaphone.imgix.net/podcasts/14a1e05a-c4f1-11e9-8b5c-b7afa7e5f787/image/EzraKleinShow_WEB_3000x3000.jpg",
+    yearListened: 2026,
+    notes: ""
+  },
+  {
+    id: 2,
+    title: "Brave New Welfare",
+    show: "High Resolution",
+    episodeUrl: "", // Add the episode link here — search "High Resolution Brave New Welfare" on Spotify/Apple Podcasts
+    coverUrl: "",
+    yearListened: 2026,
+    notes: ""
+  },
+  {
+    id: 3,
+    title: "Stefan Dercon on Development and Global Poverty",  // Update to the exact episode title
+    show: "Oxford Policy Pod",
+    episodeUrl: "", // Add the episode link here — search "Oxford Policy Pod Stefan Dercon" on Spotify/Apple Podcasts
+    coverUrl: "",
+    yearListened: 2026,
+    notes: ""
+  },
+];
+
+// ─────────────────────────────────────────
+// READING LIST (want to read / listen)
+// ─────────────────────────────────────────
+
+const wishlist = [
+  // Add items to your reading list here:
+  // Books:    { id: 1, type: 'book',    title: "...", author: "...", coverUrl: "", isbn13: "", isbn: "", notes: "" }
+  // Lectures: { id: 2, type: 'lecture', title: "...", channel: "...", youtubeId: "...", notes: "" }
+  // Essays:   { id: 3, type: 'essay',   title: "...", author: "...", url: "https://...", notes: "" }
+];
+
+// ─────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────
 
@@ -373,11 +462,25 @@ function stars(n, colored = false) {
 
 function renderStats() {
   const years = [...new Set(books.map(b => b.yearRead))].sort();
-  document.getElementById('header-stats').innerHTML = `
-    <span>${books.length} books</span>
-    <span class="stat-sep">·</span>
-    <span>${years[0]}–${years[years.length - 1]}</span>
-  `;
+  const total = books.length + lectures.length + podcasts.length + essays.length;
+  const parts = [
+    `<span>${total} items</span>`,
+    `<span class="stat-sep">·</span>`,
+    `<span>${years[0]}–${years[years.length - 1]}</span>`,
+  ];
+  if (wishlist.length) {
+    parts.push(`<span class="stat-sep">·</span><span>${wishlist.length} on list</span>`);
+  }
+  document.getElementById('header-stats').innerHTML = parts.join('');
+}
+
+function renderHomeCards() {
+  const libraryTotal = books.length + lectures.length + podcasts.length + essays.length;
+  document.getElementById('home-count-library').textContent =
+    `${libraryTotal} item${libraryTotal !== 1 ? 's' : ''}`;
+  const wantTotal = wishlist.length;
+  document.getElementById('home-count-want').textContent =
+    wantTotal ? `${wantTotal} item${wantTotal !== 1 ? 's' : ''}` : 'Empty — add something';
 }
 
 function renderGenrePills() {
@@ -458,6 +561,614 @@ function renderCard(book) {
       </div>
     </article>
   `;
+}
+
+// ─────────────────────────────────────────
+// VIEW SWITCHING
+// ─────────────────────────────────────────
+
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+  document.getElementById(`view-${name}`).classList.remove('hidden');
+  window.scrollTo(0, 0);
+}
+
+// ─────────────────────────────────────────
+// GLOBAL SEARCH
+// ─────────────────────────────────────────
+
+function allItems() {
+  const bookItems = books.map(b => ({
+    type: 'book', section: 'library', id: b.id,
+    title: b.title, sub: b.author,
+    coverUrl: b.coverUrl, isbn13: b.isbn13, isbn: b.isbn,
+    searchText: `${b.title} ${b.author} ${b.genre}`.toLowerCase(),
+  }));
+  const lectureItems = lectures.map(l => ({
+    type: 'lecture', section: 'library', id: l.id,
+    title: l.title, sub: l.channel,
+    thumbUrl: `https://img.youtube.com/vi/${l.youtubeId}/hqdefault.jpg`,
+    searchText: `${l.title} ${l.channel}`.toLowerCase(),
+  }));
+  const podcastItems = podcasts.map(p => ({
+    type: 'podcast', section: 'library', id: p.id,
+    title: p.title, sub: p.show,
+    coverUrl: p.coverUrl || '',
+    searchText: `${p.title} ${p.show}`.toLowerCase(),
+  }));
+  const essayItems = essays.map(e => ({
+    type: 'essay', section: 'library', id: e.id,
+    title: e.title, sub: e.author,
+    searchText: `${e.title} ${e.author}`.toLowerCase(),
+  }));
+  const wishItems = wishlist.map(w => ({
+    type: w.type, section: 'want', id: w.id,
+    title: w.title,
+    sub: w.author || w.channel || w.show || '',
+    coverUrl: w.coverUrl || '',
+    thumbUrl: w.type === 'lecture' ? `https://img.youtube.com/vi/${w.youtubeId}/hqdefault.jpg` : '',
+    searchText: `${w.title} ${w.author || ''} ${w.channel || ''} ${w.show || ''}`.toLowerCase(),
+  }));
+  return [...bookItems, ...lectureItems, ...podcastItems, ...essayItems, ...wishItems];
+}
+
+function runHomeSearch(query) {
+  const resultsEl = document.getElementById('home-results');
+  const navEl = document.getElementById('home-nav');
+  const q = query.trim().toLowerCase();
+
+  if (!q) {
+    resultsEl.classList.add('hidden');
+    navEl.style.display = '';
+    return;
+  }
+
+  navEl.style.display = 'none';
+  const matches = allItems().filter(item => item.searchText.includes(q)).slice(0, 20);
+
+  if (!matches.length) {
+    resultsEl.innerHTML = `<div class="home-no-results">No results for "<strong>${escHtml(query)}</strong>"</div>`;
+    resultsEl.classList.remove('hidden');
+    return;
+  }
+
+  const typeLabel = { book: 'Book', lecture: 'Lecture', podcast: 'Podcast', essay: 'Essay' };
+  const sectionLabel = { library: 'Library', want: 'Reading List' };
+
+  resultsEl.innerHTML = `
+    <div class="home-results-header">${matches.length} result${matches.length !== 1 ? 's' : ''} for "<strong>${escHtml(query)}</strong>"</div>
+    ${matches.map(item => {
+      let thumbHtml;
+      if (item.type === 'book') {
+        thumbHtml = `<img class="home-result-thumb" src="${escHtml(item.coverUrl || '')}" alt="" loading="lazy" onerror="this.style.display='none'">`;
+      } else if (item.type === 'lecture') {
+        thumbHtml = `<img class="home-result-thumb home-result-thumb--video" src="${escHtml(item.thumbUrl || '')}" alt="" loading="lazy" onerror="this.style.display='none'">`;
+      } else {
+        thumbHtml = `<div class="home-result-thumb home-result-thumb--essay">❝</div>`;
+      }
+      return `
+        <button class="home-result-item" data-type="${item.type}" data-section="${item.section}" data-id="${item.id}">
+          ${thumbHtml}
+          <div class="home-result-info">
+            <div class="home-result-title">${escHtml(item.title)}</div>
+            <div class="home-result-meta">${escHtml(item.sub)} · ${sectionLabel[item.section]}</div>
+          </div>
+          <span class="home-result-type">${typeLabel[item.type]}</span>
+        </button>
+      `;
+    }).join('')}
+  `;
+  resultsEl.classList.remove('hidden');
+}
+
+function switchLibraryTab(section) {
+  document.querySelectorAll('.section-tab').forEach(t => {
+    t.classList.remove('active');
+    t.setAttribute('aria-selected', 'false');
+  });
+  const tab = document.querySelector(`.section-tab[data-section="${section}"]`);
+  if (tab) { tab.classList.add('active'); tab.setAttribute('aria-selected', 'true'); }
+  document.getElementById('catalogue').classList.toggle('hidden', section !== 'books');
+  document.getElementById('book-filters').style.display = section === 'books' ? '' : 'none';
+  document.getElementById('lectures-section').classList.toggle('hidden', section !== 'lectures');
+  document.getElementById('podcasts-section').classList.toggle('hidden', section !== 'podcasts');
+  document.getElementById('essays-section').classList.toggle('hidden', section !== 'essays');
+}
+
+function handleSearchResultClick(type, section, id) {
+  if (section === 'library') {
+    showView('library');
+    const tabSection = type === 'book' ? 'books' : `${type}s`;
+    switchLibraryTab(tabSection);
+    setTimeout(() => {
+      if (type === 'book') openModal(id);
+      else if (type === 'lecture') openLectureModal(id);
+      else if (type === 'podcast') openPodcastModal(id);
+      else if (type === 'essay') openEssayModal(id);
+    }, 50);
+  } else {
+    showView('want');
+  }
+}
+
+// ─────────────────────────────────────────
+// WISHLIST RENDER
+// ─────────────────────────────────────────
+
+function renderWantSection() {
+  const el = document.getElementById('want-section');
+
+  if (!wishlist.length) {
+    el.innerHTML = `<div class="empty-section"><strong>Your reading list is empty</strong>Add items to the <code>wishlist</code> array in app.js</div>`;
+    return;
+  }
+
+  const byType = [
+    { label: 'Books',    items: wishlist.filter(w => w.type === 'book') },
+    { label: 'Lectures', items: wishlist.filter(w => w.type === 'lecture') },
+    { label: 'Podcasts', items: wishlist.filter(w => w.type === 'podcast') },
+    { label: 'Essays',   items: wishlist.filter(w => w.type === 'essay') },
+  ].filter(g => g.items.length > 0);
+
+  el.innerHTML = byType.map(group => `
+    <section class="want-type-section">
+      <h2 class="genre-title">
+        <span class="genre-label">${group.label}</span>
+        <span class="genre-count">${group.items.length}</span>
+      </h2>
+      <div class="${group.label === 'Books' ? 'book-grid' : 'item-grid'}">
+        ${group.items.map(item => renderWishCard(item)).join('')}
+      </div>
+      <div class="shelf-bar"></div>
+    </section>
+  `).join('');
+
+  // Load covers for wishlist book cards
+  el.querySelectorAll('.cover-img[data-coverurl]').forEach(img => loadCover(img));
+
+  el.querySelectorAll('.item-card, .book-card').forEach(card => {
+    card.addEventListener('click', () => openWishModal(card.dataset.type, parseInt(card.dataset.id)));
+    card.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') openWishModal(card.dataset.type, parseInt(card.dataset.id));
+    });
+  });
+}
+
+function renderWishCard(item) {
+  if (item.type === 'book') {
+    const initial = item.title.replace(/^(The|A|An) /i, '').trim()[0]?.toUpperCase() || '?';
+    return `
+      <article class="book-card" data-id="${item.id}" data-type="book" role="button" tabindex="0"
+        aria-label="${escHtml(item.title)} by ${escHtml(item.author || '')}">
+        <div class="cover-wrap">
+          <div class="cover-placeholder" aria-hidden="true">${initial}</div>
+          <img class="cover-img" alt="${escHtml(item.title)}"
+            data-coverurl="${escHtml(item.coverUrl || '')}"
+            data-isbn13="${item.isbn13 || ''}"
+            data-isbn="${item.isbn || ''}"
+            data-title="${escHtml(item.title)}"
+            data-author="${escHtml(item.author || '')}"
+            loading="lazy">
+          <div class="wish-badge" title="Want to read">🔖</div>
+        </div>
+        <div class="card-info">
+          <h3 class="card-title">${escHtml(item.title)}</h3>
+          <p class="card-author">${escHtml(item.author || '')}</p>
+        </div>
+      </article>
+    `;
+  }
+  if (item.type === 'lecture') {
+    const thumbUrl = `https://img.youtube.com/vi/${item.youtubeId}/hqdefault.jpg`;
+    return `
+      <article class="item-card lecture-card" data-id="${item.id}" data-type="lecture" role="button" tabindex="0"
+        aria-label="${escHtml(item.title)} — ${escHtml(item.channel || '')}">
+        <div class="cover-wrap cover-wrap--video">
+          <div class="cover-placeholder" aria-hidden="true">▶</div>
+          <img class="cover-img loaded" src="${escHtml(thumbUrl)}" alt="${escHtml(item.title)}" loading="lazy">
+          <div class="play-overlay" aria-hidden="true"></div>
+          <div class="wish-badge" title="Want to watch">🔖</div>
+        </div>
+        <div class="card-info">
+          <h3 class="card-title">${escHtml(item.title)}</h3>
+          <p class="card-author">${escHtml(item.channel || '')}</p>
+        </div>
+      </article>
+    `;
+  }
+  if (item.type === 'podcast') {
+    return `
+      <article class="item-card podcast-card" data-id="${item.id}" data-type="podcast" role="button" tabindex="0"
+        aria-label="${escHtml(item.title)} — ${escHtml(item.show || '')}">
+        <div class="cover-wrap cover-wrap--podcast">
+          <div class="cover-placeholder cover-placeholder--podcast" aria-hidden="true">🎙</div>
+          ${item.coverUrl ? `<img class="cover-img" src="${escHtml(item.coverUrl)}" alt="${escHtml(item.show || '')}" loading="lazy" onload="this.classList.add('loaded')">` : ''}
+          <div class="wish-badge" title="Want to listen">🔖</div>
+        </div>
+        <div class="card-info">
+          <h3 class="card-title">${escHtml(item.title)}</h3>
+          <p class="card-author">${escHtml(item.show || '')}</p>
+        </div>
+      </article>
+    `;
+  }
+  if (item.type === 'essay') {
+    const substack = isSubstack(item.url);
+    return `
+      <article class="item-card essay-card" data-id="${item.id}" data-type="essay" role="button" tabindex="0"
+        aria-label="${escHtml(item.title)} by ${escHtml(item.author || '')}">
+        <div class="cover-wrap cover-wrap--essay">
+          <div class="cover-placeholder cover-placeholder--essay" aria-hidden="true">❝</div>
+          ${substack ? `<div class="source-badge source-badge--substack" title="Substack">S</div>` : ''}
+          <div class="wish-badge" title="Want to read">🔖</div>
+        </div>
+        <div class="card-info">
+          <h3 class="card-title">${escHtml(item.title)}</h3>
+          <p class="card-author">${escHtml(item.author || '')}</p>
+        </div>
+      </article>
+    `;
+  }
+  return '';
+}
+
+function openWishModal(type, id) {
+  const item = wishlist.find(w => w.type === type && w.id === id);
+  if (!item) return;
+  if (type === 'book') {
+    // Reuse book modal structure
+    const modal = document.getElementById('modal');
+    modal.querySelector('.modal-content').className = 'modal-content';
+    document.getElementById('modal-genre').textContent  = 'Want to Read';
+    document.getElementById('modal-title').textContent  = item.title;
+    document.getElementById('modal-author').textContent = item.author || '';
+    document.getElementById('modal-stars').innerHTML    = '';
+    document.getElementById('modal-year').textContent   = '';
+    const reviewEl = document.getElementById('modal-review');
+    reviewEl.textContent = item.notes?.trim() || 'No notes yet.';
+    reviewEl.classList.toggle('no-review', !item.notes?.trim());
+    document.getElementById('modal-link').classList.add('hidden');
+    const modalCover = document.getElementById('modal-cover');
+    modalCover.alt = item.title;
+    modalCover.className = '';
+    modalCover.dataset.isbn13   = item.isbn13   || '';
+    modalCover.dataset.isbn     = item.isbn     || '';
+    modalCover.dataset.title    = item.title;
+    modalCover.dataset.author   = item.author   || '';
+    modalCover.dataset.coverurl = item.coverUrl || '';
+    document.querySelector('.modal-cover-wrap').style.aspectRatio = '';
+    if (item.coverUrl) {
+      modalCover.src = item.coverUrl;
+      modalCover.onload  = () => modalCover.classList.add('loaded');
+      modalCover.onerror = () => tryGoogleBooks(modalCover);
+    } else {
+      tryGoogleBooks(modalCover);
+    }
+    modal.classList.remove('hidden');
+    document.body.classList.add('modal-open');
+  } else if (type === 'lecture') {
+    openLectureModal(id, true);
+  } else if (type === 'podcast') {
+    openPodcastModal(id, true);
+  } else if (type === 'essay') {
+    openEssayModal(id, true);
+  }
+}
+
+// ─────────────────────────────────────────
+// PODCASTS RENDER
+// ─────────────────────────────────────────
+
+function renderPodcastsSection() {
+  const el = document.getElementById('podcasts-section');
+  if (!podcasts.length) {
+    el.innerHTML = `<div class="empty-section"><strong>No podcasts yet</strong>Add episodes to the <code>podcasts</code> array in app.js</div>`;
+    return;
+  }
+  el.innerHTML = `
+    <section class="genre-section">
+      <h2 class="genre-title">
+        <span class="genre-label">Podcasts</span>
+        <span class="genre-count">${podcasts.length}</span>
+      </h2>
+      <div class="item-grid">
+        ${podcasts.map(renderPodcastCard).join('')}
+      </div>
+      <div class="shelf-bar"></div>
+    </section>
+  `;
+  el.querySelectorAll('.item-card').forEach(card => {
+    card.addEventListener('click', () => openPodcastModal(parseInt(card.dataset.id)));
+    card.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') openPodcastModal(parseInt(card.dataset.id));
+    });
+  });
+}
+
+function renderPodcastCard(podcast) {
+  const hasNotes = podcast.notes && podcast.notes.trim().length > 0;
+  const hasCover = !!podcast.coverUrl;
+  return `
+    <article
+      class="item-card podcast-card"
+      data-id="${podcast.id}"
+      role="button"
+      tabindex="0"
+      aria-label="${escHtml(podcast.title)} — ${escHtml(podcast.show)}"
+    >
+      <div class="cover-wrap cover-wrap--podcast">
+        <div class="cover-placeholder cover-placeholder--podcast" aria-hidden="true">🎙</div>
+        ${hasCover ? `<img class="cover-img" src="${escHtml(podcast.coverUrl)}" alt="${escHtml(podcast.show)}" loading="lazy" onload="this.classList.add('loaded')">` : ''}
+        ${hasNotes ? `<div class="review-badge" title="Has notes">✍</div>` : ''}
+      </div>
+      <div class="card-info">
+        <div class="card-meta">
+          <span class="card-year">${podcast.yearListened}</span>
+        </div>
+        <h3 class="card-title">${escHtml(podcast.title)}</h3>
+        <p class="card-author">${escHtml(podcast.show)}</p>
+      </div>
+    </article>
+  `;
+}
+
+function openPodcastModal(id, fromWishlist = false) {
+  const podcast = fromWishlist
+    ? wishlist.find(w => w.type === 'podcast' && w.id === id)
+    : podcasts.find(p => p.id === id);
+  if (!podcast) return;
+
+  const modal = document.getElementById('modal');
+  modal.querySelector('.modal-content').className = 'modal-content modal--podcast';
+
+  document.getElementById('modal-genre').textContent  = 'Podcast';
+  document.getElementById('modal-title').textContent  = podcast.title;
+  document.getElementById('modal-author').textContent = podcast.show;
+  document.getElementById('modal-stars').innerHTML    = '';
+  document.getElementById('modal-year').textContent   =
+    podcast.yearListened ? `Listened in ${podcast.yearListened}` : 'Want to listen';
+
+  const reviewEl = document.getElementById('modal-review');
+  const notesText = podcast.notes?.trim();
+  reviewEl.textContent = notesText || 'No notes written.';
+  reviewEl.classList.toggle('no-review', !notesText);
+
+  const linkEl = document.getElementById('modal-link');
+  if (podcast.episodeUrl) {
+    linkEl.href = podcast.episodeUrl;
+    linkEl.textContent = 'Listen to Episode ↗';
+    linkEl.classList.remove('hidden');
+  } else {
+    linkEl.classList.add('hidden');
+  }
+
+  const modalCover = document.getElementById('modal-cover');
+  document.querySelector('.modal-cover-wrap').style.aspectRatio = '1 / 1';
+  if (podcast.coverUrl) {
+    modalCover.src = podcast.coverUrl;
+    modalCover.alt = podcast.show;
+    modalCover.onload  = () => modalCover.classList.add('loaded');
+    modalCover.className = '';
+  } else {
+    modalCover.src = '';
+    modalCover.alt = '';
+    modalCover.className = '';
+  }
+
+  modal.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+}
+
+// ─────────────────────────────────────────
+// LECTURES & ESSAYS RENDER
+// ─────────────────────────────────────────
+
+function isSubstack(url) {
+  return url && url.includes('substack.com');
+}
+
+function renderLecturesSection() {
+  const el = document.getElementById('lectures-section');
+  if (!lectures.length) {
+    el.innerHTML = `<div class="empty-section"><strong>No lectures yet</strong>Add a lecture to the <code>lectures</code> array in app.js</div>`;
+    return;
+  }
+  el.innerHTML = `
+    <section class="genre-section">
+      <h2 class="genre-title">
+        <span class="genre-label">Lectures</span>
+        <span class="genre-count">${lectures.length}</span>
+      </h2>
+      <div class="item-grid">
+        ${lectures.map(renderLectureCard).join('')}
+      </div>
+      <div class="shelf-bar"></div>
+    </section>
+  `;
+  el.querySelectorAll('.item-card').forEach(card => {
+    card.addEventListener('click', () => openLectureModal(parseInt(card.dataset.id)));
+    card.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') openLectureModal(parseInt(card.dataset.id));
+    });
+  });
+}
+
+function renderEssaysSection() {
+  const el = document.getElementById('essays-section');
+  if (!essays.length) {
+    el.innerHTML = `<div class="empty-section"><strong>No essays yet</strong>Add an essay to the <code>essays</code> array in app.js</div>`;
+    return;
+  }
+  el.innerHTML = `
+    <section class="genre-section">
+      <h2 class="genre-title">
+        <span class="genre-label">Essays</span>
+        <span class="genre-count">${essays.length}</span>
+      </h2>
+      <div class="item-grid">
+        ${essays.map(renderEssayCard).join('')}
+      </div>
+      <div class="shelf-bar"></div>
+    </section>
+  `;
+  el.querySelectorAll('.item-card').forEach(card => {
+    card.addEventListener('click', () => openEssayModal(parseInt(card.dataset.id)));
+    card.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') openEssayModal(parseInt(card.dataset.id));
+    });
+  });
+}
+
+function renderLectureCard(lecture) {
+  const hasNotes = lecture.notes && lecture.notes.trim().length > 0;
+  const thumbHtml = lecture.youtubeId
+    ? `<img class="cover-img loaded" src="https://img.youtube.com/vi/${lecture.youtubeId}/hqdefault.jpg" alt="${escHtml(lecture.title)}" loading="lazy">`
+    : '';
+  return `
+    <article
+      class="item-card lecture-card"
+      data-id="${lecture.id}"
+      role="button"
+      tabindex="0"
+      aria-label="${escHtml(lecture.title)} — ${escHtml(lecture.channel)}"
+    >
+      <div class="cover-wrap cover-wrap--video">
+        <div class="cover-placeholder" aria-hidden="true">▶</div>
+        ${thumbHtml}
+        <div class="play-overlay" aria-hidden="true"></div>
+        ${hasNotes ? `<div class="review-badge" title="Has notes">✍</div>` : ''}
+      </div>
+      <div class="card-info">
+        <div class="card-meta">
+          <span class="card-year">${lecture.yearWatched}</span>
+        </div>
+        <h3 class="card-title">${escHtml(lecture.title)}</h3>
+        <p class="card-author">${escHtml(lecture.channel)}</p>
+      </div>
+    </article>
+  `;
+}
+
+function renderEssayCard(essay) {
+  const hasNotes = essay.notes && essay.notes.trim().length > 0;
+  const substack = isSubstack(essay.url);
+  return `
+    <article
+      class="item-card essay-card"
+      data-id="${essay.id}"
+      role="button"
+      tabindex="0"
+      aria-label="${escHtml(essay.title)} by ${escHtml(essay.author)}"
+    >
+      <div class="cover-wrap cover-wrap--essay">
+        <div class="cover-placeholder cover-placeholder--essay" aria-hidden="true">❝</div>
+        ${substack ? `<div class="source-badge source-badge--substack" title="Substack">S</div>` : ''}
+        ${hasNotes ? `<div class="review-badge" title="Has notes">✍</div>` : ''}
+      </div>
+      <div class="card-info">
+        <div class="card-meta">
+          <span class="card-year">${essay.yearRead}</span>
+        </div>
+        <h3 class="card-title">${escHtml(essay.title)}</h3>
+        <p class="card-author">${escHtml(essay.author)}</p>
+      </div>
+    </article>
+  `;
+}
+
+function openLectureModal(id, fromWishlist = false) {
+  const lecture = fromWishlist
+    ? wishlist.find(w => w.type === 'lecture' && w.id === id)
+    : lectures.find(l => l.id === id);
+  if (!lecture) return;
+
+  const modal = document.getElementById('modal');
+  modal.querySelector('.modal-content').className = 'modal-content modal--lecture';
+
+  document.getElementById('modal-genre').textContent  = 'Lecture';
+  document.getElementById('modal-title').textContent  = lecture.title;
+  document.getElementById('modal-author').textContent = lecture.channel;
+  document.getElementById('modal-stars').innerHTML    = '';
+  document.getElementById('modal-year').textContent   =
+    lecture.yearWatched ? `Watched in ${lecture.yearWatched}` : 'Want to watch';
+
+  const reviewEl = document.getElementById('modal-review');
+  if (lecture.notes && lecture.notes.trim()) {
+    reviewEl.textContent = lecture.notes;
+    reviewEl.classList.remove('no-review');
+  } else {
+    reviewEl.textContent = 'No notes written.';
+    reviewEl.classList.add('no-review');
+  }
+
+  const linkEl = document.getElementById('modal-link');
+  const linkUrl = lecture.youtubeId
+    ? `https://www.youtube.com/watch?v=${lecture.youtubeId}`
+    : (lecture.courseUrl || null);
+  if (linkUrl) {
+    linkEl.href = linkUrl;
+    linkEl.textContent = lecture.youtubeId ? 'Watch on YouTube ↗' : 'View Course ↗';
+    linkEl.classList.remove('hidden');
+  } else {
+    linkEl.classList.add('hidden');
+  }
+
+  const modalCover = document.getElementById('modal-cover');
+  document.querySelector('.modal-cover-wrap').style.aspectRatio = '16 / 9';
+  if (lecture.youtubeId) {
+    modalCover.src = `https://img.youtube.com/vi/${lecture.youtubeId}/hqdefault.jpg`;
+    modalCover.alt = lecture.title;
+    modalCover.onload  = () => modalCover.classList.add('loaded');
+    modalCover.className = '';
+  } else {
+    modalCover.src = '';
+    modalCover.alt = '';
+    modalCover.className = '';
+  }
+
+  modal.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+}
+
+function openEssayModal(id, fromWishlist = false) {
+  const essay = fromWishlist
+    ? wishlist.find(w => w.type === 'essay' && w.id === id)
+    : essays.find(e => e.id === id);
+  if (!essay) return;
+
+  const modal = document.getElementById('modal');
+  modal.querySelector('.modal-content').className = 'modal-content modal--essay';
+
+  const sourceLabel = isSubstack(essay.url) ? 'Substack Essay' : 'Essay';
+  document.getElementById('modal-genre').textContent  = sourceLabel;
+  document.getElementById('modal-title').textContent  = essay.title;
+  document.getElementById('modal-author').textContent = essay.author;
+  document.getElementById('modal-stars').innerHTML    = '';
+  document.getElementById('modal-year').textContent   =
+    essay.yearRead ? `Read in ${essay.yearRead}` : 'Want to read';
+
+  const reviewEl = document.getElementById('modal-review');
+  if (essay.notes && essay.notes.trim()) {
+    reviewEl.textContent = essay.notes;
+    reviewEl.classList.remove('no-review');
+  } else {
+    reviewEl.textContent = 'No notes written.';
+    reviewEl.classList.add('no-review');
+  }
+
+  const linkEl = document.getElementById('modal-link');
+  linkEl.href = essay.url;
+  linkEl.textContent = 'Read Essay ↗';
+  linkEl.classList.remove('hidden');
+
+  const modalCover = document.getElementById('modal-cover');
+  modalCover.src = '';
+  modalCover.alt = '';
+  modalCover.className = '';
+  document.querySelector('.modal-cover-wrap').style.aspectRatio = '';
+
+  modal.classList.remove('hidden');
+  document.body.classList.add('modal-open');
 }
 
 // ─────────────────────────────────────────
@@ -588,7 +1299,11 @@ function openModal(id) {
 }
 
 function closeModal() {
-  document.getElementById('modal').classList.add('hidden');
+  const modal = document.getElementById('modal');
+  modal.classList.add('hidden');
+  modal.querySelector('.modal-content').className = 'modal-content';
+  document.getElementById('modal-link').classList.add('hidden');
+  document.querySelector('.modal-cover-wrap').style.aspectRatio = '';
   document.body.classList.remove('modal-open');
 }
 
@@ -647,6 +1362,36 @@ function setupEventListeners() {
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closeModal();
   });
+
+  // Library section tabs
+  document.querySelector('.section-tabs').addEventListener('click', e => {
+    const tab = e.target.closest('.section-tab');
+    if (!tab) return;
+    switchLibraryTab(tab.dataset.section);
+  });
+
+  // Home nav cards
+  document.getElementById('nav-library').addEventListener('click', () => showView('library'));
+  document.getElementById('nav-want').addEventListener('click', () => showView('want'));
+
+  // Header title → home
+  document.getElementById('home-link').addEventListener('click', () => {
+    document.getElementById('home-search').value = '';
+    runHomeSearch('');
+    showView('home');
+  });
+
+  // Home search
+  document.getElementById('home-search').addEventListener('input', e => {
+    runHomeSearch(e.target.value);
+  });
+
+  // Home search result clicks (delegated)
+  document.getElementById('home-results').addEventListener('click', e => {
+    const item = e.target.closest('.home-result-item');
+    if (!item) return;
+    handleSearchResultClick(item.dataset.type, item.dataset.section, parseInt(item.dataset.id));
+  });
 }
 
 // ─────────────────────────────────────────
@@ -655,8 +1400,13 @@ function setupEventListeners() {
 
 document.addEventListener('DOMContentLoaded', () => {
   renderStats();
+  renderHomeCards();
   renderGenrePills();
   renderYearOptions();
   renderCatalogue();
+  renderLecturesSection();
+  renderPodcastsSection();
+  renderEssaysSection();
+  renderWantSection();
   setupEventListeners();
 });
