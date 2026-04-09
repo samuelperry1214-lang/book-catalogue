@@ -1288,6 +1288,50 @@ body.modal-open { overflow: hidden; }
 }
 
 /* ─────────────────────────────────────────
+   MODAL ACTION BUTTONS (remove / move)
+───────────────────────────────────────── */
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.modal-action-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.38rem 0.9rem;
+  font-size: 0.78rem;
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.modal-action-btn--move {
+  color: #2d6a4f;
+  border-color: #2d6a4f;
+}
+.modal-action-btn--move:hover {
+  background: #2d6a4f;
+  color: #fff;
+}
+
+.modal-action-btn--delete {
+  color: var(--text-muted);
+  border-color: var(--border);
+  margin-left: auto;
+}
+.modal-action-btn--delete:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ─────────────────────────────────────────
    ADD MODAL — COVER PREVIEW + STAR RATING
 ───────────────────────────────────────── */
 .add-title-cover-row {

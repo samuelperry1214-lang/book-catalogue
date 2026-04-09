@@ -824,6 +824,7 @@ function renderWishCard(item) {
 function openWishModal(type, id) {
   const item = wishlist.find(w => w.type === type && w.id === id);
   if (!item) return;
+  setModalActions(id, type, 'want', item);
   if (type === 'book') {
     // Reuse book modal structure
     const modal = document.getElementById('modal');
@@ -926,6 +927,8 @@ function openPodcastModal(id, fromWishlist = false) {
     ? wishlist.find(w => w.type === 'podcast' && w.id === id)
     : podcasts.find(p => p.id === id);
   if (!podcast) return;
+
+  setModalActions(id, 'podcast', fromWishlist ? 'want' : 'library', podcast);
 
   const modal = document.getElementById('modal');
   modal.querySelector('.modal-content').className = 'modal-content modal--podcast';
@@ -1093,6 +1096,8 @@ function openLectureModal(id, fromWishlist = false) {
     : lectures.find(l => l.id === id);
   if (!lecture) return;
 
+  setModalActions(id, 'lecture', fromWishlist ? 'want' : 'library', lecture);
+
   const modal = document.getElementById('modal');
   modal.querySelector('.modal-content').className = 'modal-content modal--lecture';
 
@@ -1146,6 +1151,8 @@ function openEssayModal(id, fromWishlist = false) {
     ? wishlist.find(w => w.type === 'essay' && w.id === id)
     : essays.find(e => e.id === id);
   if (!essay) return;
+
+  setModalActions(id, 'essay', fromWishlist ? 'want' : 'library', essay);
 
   const modal = document.getElementById('modal');
   modal.querySelector('.modal-content').className = 'modal-content modal--essay';
@@ -1269,9 +1276,100 @@ async function tryGoogleBooks(img) {
 // MODAL
 // ─────────────────────────────────────────
 
+let currentModalItem = null; // { id, type, source: 'library'|'want', item }
+
+function setModalActions(id, type, source, item) {
+  currentModalItem = { id, type, source, item };
+  const moveBtn = document.getElementById('modal-move-btn');
+  const moveLabels = { book: 'Mark as Read →', podcast: 'Mark as Listened →', lecture: 'Mark as Watched →', essay: 'Mark as Read →' };
+  moveBtn.textContent = moveLabels[type] || 'Move to Library →';
+  moveBtn.classList.toggle('hidden', source !== 'want');
+}
+
+function deleteCurrentItem() {
+  if (!currentModalItem) return;
+  const { id, type, source, item } = currentModalItem;
+  if (!confirm('Remove this item from your library?')) return;
+
+  if (item._dest !== undefined) {
+    removeFromUserItems(id);  // user-added: remove from Firebase/localStorage
+  } else {
+    saveDeletedId(id);        // hardcoded: record as deleted so it stays hidden
+  }
+
+  const removeFrom = arr => { const i = arr.findIndex(x => x.id === id); if (i > -1) arr.splice(i, 1); };
+
+  if (source === 'want') {
+    removeFrom(wishlist);
+    renderWantSection();
+  } else {
+    if (type === 'book')    { removeFrom(books);    renderCatalogue(); renderGenrePills(); renderYearOptions(); }
+    if (type === 'lecture') { removeFrom(lectures); renderLecturesSection(); }
+    if (type === 'podcast') { removeFrom(podcasts); renderPodcastsSection(); }
+    if (type === 'essay')   { removeFrom(essays);   renderEssaysSection(); }
+  }
+
+  renderStats();
+  renderHomeCards();
+  closeModal();
+  showToast('Removed');
+}
+
+function moveToLibrary() {
+  if (!currentModalItem) return;
+  const { id, type } = currentModalItem;
+  const wItem = wishlist.find(w => w.id === id);
+  if (!wItem) return;
+
+  const year = new Date().getFullYear();
+  // Build a library-ready item, preserving existing fields and filling defaults
+  const newItem = {
+    ...wItem,
+    // Give hardcoded wishlist items a fresh timestamp ID so they don't clash
+    id: wItem._dest !== undefined ? wItem.id : Date.now(),
+    _dest: 'library',
+    yearRead:     wItem.yearRead     || year,
+    yearListened: wItem.yearListened || year,
+    yearWatched:  wItem.yearWatched  || year,
+    rating:       wItem.rating       || 3,
+    genre:        wItem.genre        || 'Fiction',
+    review:       wItem.review       || wItem.notes || '',
+    show:         wItem.show         || wItem.author || '',
+    channel:      wItem.channel      || wItem.author || '',
+  };
+
+  // Remove from wishlist storage
+  if (wItem._dest !== undefined) removeFromUserItems(wItem.id);
+  else saveDeletedId(wItem.id);
+
+  // Save to library storage
+  addUserItem(newItem);
+
+  // Update live arrays
+  const idx = wishlist.findIndex(w => w.id === id);
+  if (idx > -1) wishlist.splice(idx, 1);
+
+  if (type === 'podcast') { podcasts.push(newItem); renderPodcastsSection(); }
+  if (type === 'lecture') { lectures.push(newItem); renderLecturesSection(); }
+  if (type === 'essay')   { essays.push(newItem);   renderEssaysSection(); }
+  if (type === 'book')    { books.push(newItem);     renderCatalogue(); renderGenrePills(); renderYearOptions(); }
+
+  renderWantSection();
+  renderStats();
+  renderHomeCards();
+  closeModal();
+
+  showView('library');
+  const tabMap = { podcast: 'podcasts', lecture: 'lectures', essay: 'essays', book: 'books' };
+  switchLibraryTab(tabMap[type] || 'essays');
+  showToast('✓ Moved to Library');
+}
+
 function openModal(id) {
   const book = books.find(b => b.id === id);
   if (!book) return;
+
+  setModalActions(id, 'book', 'library', book);
 
   document.getElementById('modal-title').textContent  = book.title;
   document.getElementById('modal-author').textContent = book.author;
@@ -1316,6 +1414,7 @@ function closeModal() {
   document.getElementById('modal-link').classList.add('hidden');
   document.querySelector('.modal-cover-wrap').style.aspectRatio = '';
   document.body.classList.remove('modal-open');
+  currentModalItem = null;
 }
 
 // ─────────────────────────────────────────
@@ -1370,6 +1469,8 @@ function setupEventListeners() {
     if (e.target === e.currentTarget) closeModal();
   });
   document.getElementById('modal-close').addEventListener('click', closeModal);
+  document.getElementById('modal-delete-btn').addEventListener('click', deleteCurrentItem);
+  document.getElementById('modal-move-btn').addEventListener('click', moveToLibrary);
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
       if (!document.getElementById('setup-modal').classList.contains('hidden')) closeSetupModal();
@@ -1478,6 +1579,57 @@ function addUserItem(item) {
   })();
   saved.push(item);
   saveUserItems(saved);
+}
+
+function removeFromUserItems(id) {
+  const saved = (() => {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
+  })();
+  saveUserItems(saved.filter(i => i.id !== id));
+}
+
+// ─── Deleted IDs (for hiding hardcoded items) ───
+
+const DELETED_KEY = 'library_deleted_ids';
+
+function getDeletedIds() {
+  try { return JSON.parse(localStorage.getItem(DELETED_KEY) || '[]'); } catch { return []; }
+}
+
+function saveDeletedId(id) {
+  const ids = getDeletedIds();
+  if (ids.includes(id)) return;
+  ids.push(id);
+  localStorage.setItem(DELETED_KEY, JSON.stringify(ids));
+  if (FIREBASE_DB_URL) {
+    fetch(`${FIREBASE_DB_URL}/library_deleted_ids.json`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(ids),
+    }).catch(() => {});
+  }
+}
+
+async function applyDeletedIds() {
+  let deleted;
+  if (FIREBASE_DB_URL) {
+    try {
+      const res = await fetch(`${FIREBASE_DB_URL}/library_deleted_ids.json`);
+      const data = await res.json();
+      if (Array.isArray(data) && data.length) {
+        localStorage.setItem(DELETED_KEY, JSON.stringify(data));
+        deleted = new Set(data);
+      }
+    } catch {}
+  }
+  if (!deleted) deleted = new Set(getDeletedIds());
+  if (!deleted.size) return;
+  const f = arr => arr.filter(x => !deleted.has(x.id));
+  books.splice(0,    books.length,    ...f(books));
+  lectures.splice(0, lectures.length, ...f(lectures));
+  podcasts.splice(0, podcasts.length, ...f(podcasts));
+  essays.splice(0,   essays.length,   ...f(essays));
+  wishlist.splice(0, wishlist.length, ...f(wishlist));
 }
 
 // ─────────────────────────────────────────
@@ -1789,6 +1941,7 @@ if ('serviceWorker' in navigator) {
 
 document.addEventListener('DOMContentLoaded', async () => {
   await mergeUserItems();
+  await applyDeletedIds();
   renderStats();
   renderHomeCards();
   renderGenrePills();
