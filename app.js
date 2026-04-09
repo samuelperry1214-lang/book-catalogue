@@ -1412,12 +1412,30 @@ function setupEventListeners() {
 }
 
 // ─────────────────────────────────────────
-// LOCAL STORAGE — USER-ADDED ITEMS
+// LOCAL STORAGE + CLOUD SYNC — USER-ADDED ITEMS
 // ─────────────────────────────────────────
+//
+// CROSS-DEVICE SYNC SETUP (optional, free):
+//   1. Go to https://console.firebase.google.com → Create project → Build → Realtime Database
+//   2. Create database (start in test mode for personal use)
+//   3. Copy the database URL (e.g. https://my-app-default-rtdb.firebaseio.com)
+//   4. Paste it below — items added on any device will now sync automatically.
+//
+const FIREBASE_DB_URL = 'https://library-cf4ea-default-rtdb.europe-west1.firebasedatabase.app';
 
 const STORAGE_KEY = 'library_user_items';
 
-function loadUserItems() {
+async function loadUserItems() {
+  if (FIREBASE_DB_URL) {
+    try {
+      const res = await fetch(`${FIREBASE_DB_URL}/library_user_items.json`);
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        return data;
+      }
+    } catch { /* offline — fall through to localStorage */ }
+  }
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
   } catch { return []; }
@@ -1425,10 +1443,17 @@ function loadUserItems() {
 
 function saveUserItems(items) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  if (FIREBASE_DB_URL) {
+    fetch(`${FIREBASE_DB_URL}/library_user_items.json`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(items),
+    }).catch(() => {}); // fire-and-forget; localStorage already saved
+  }
 }
 
-function mergeUserItems() {
-  const saved = loadUserItems();
+async function mergeUserItems() {
+  const saved = await loadUserItems();
   const libraryPodcasts = saved.filter(i => i._dest === 'library' && i.type === 'podcast');
   const libraryEssays   = saved.filter(i => i._dest === 'library' && i.type === 'essay');
   const wantItems       = saved.filter(i => i._dest === 'want');
@@ -1439,7 +1464,10 @@ function mergeUserItems() {
 }
 
 function addUserItem(item) {
-  const saved = loadUserItems();
+  // Read from localStorage directly for speed; saveUserItems syncs to Firebase
+  const saved = (() => {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
+  })();
   saved.push(item);
   saveUserItems(saved);
 }
@@ -1447,6 +1475,18 @@ function addUserItem(item) {
 // ─────────────────────────────────────────
 // ADD FORM
 // ─────────────────────────────────────────
+
+async function fetchPageTitle(url) {
+  try {
+    const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+    if (!res.ok) return '';
+    const data = await res.json();
+    const match = data.contents?.match(/<title[^>]*>([^<]+)<\/title>/i);
+    return match ? match[1].replace(/\s+/g, ' ').trim() : '';
+  } catch {
+    return '';
+  }
+}
 
 function detectType(url) {
   const u = url.toLowerCase();
@@ -1544,10 +1584,23 @@ function setupAddForm() {
     if (e.target === e.currentTarget) closeAddModal();
   });
 
+  let titleFetchTimer = null;
   document.getElementById('add-url').addEventListener('input', e => {
-    const detected = detectType(e.target.value);
+    const url = e.target.value.trim();
+    const detected = detectType(url);
     document.getElementById('add-type').value = detected;
     updateAuthorLabel();
+
+    // Auto-fetch page title for essays
+    if (detected === 'essay' && url.startsWith('http')) {
+      clearTimeout(titleFetchTimer);
+      titleFetchTimer = setTimeout(async () => {
+        const titleEl = document.getElementById('add-title');
+        if (titleEl.value.trim()) return; // don't overwrite user input
+        const fetched = await fetchPageTitle(url);
+        if (fetched && !titleEl.value.trim()) titleEl.value = fetched;
+      }, 700);
+    }
   });
 
   document.getElementById('add-type').addEventListener('change', updateAuthorLabel);
@@ -1567,8 +1620,8 @@ function setupAddForm() {
 // INIT
 // ─────────────────────────────────────────
 
-document.addEventListener('DOMContentLoaded', () => {
-  mergeUserItems();
+document.addEventListener('DOMContentLoaded', async () => {
+  await mergeUserItems();
   renderStats();
   renderHomeCards();
   renderGenrePills();
