@@ -1061,6 +1061,7 @@ function renderLectureCard(lecture) {
 function renderEssayCard(essay) {
   const hasNotes = essay.notes && essay.notes.trim().length > 0;
   const substack = isSubstack(essay.url);
+  const hasCover = !!essay.coverUrl;
   return `
     <article
       class="item-card essay-card"
@@ -1071,6 +1072,7 @@ function renderEssayCard(essay) {
     >
       <div class="cover-wrap cover-wrap--essay">
         <div class="cover-placeholder cover-placeholder--essay" aria-hidden="true">❝</div>
+        ${hasCover ? `<img class="cover-img" src="${escHtml(essay.coverUrl)}" alt="${escHtml(essay.title)}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'">` : ''}
         ${substack ? `<div class="source-badge source-badge--substack" title="Substack">S</div>` : ''}
         ${hasNotes ? `<div class="review-badge" title="Has notes">✍</div>` : ''}
       </div>
@@ -1459,8 +1461,13 @@ async function mergeUserItems() {
   const libraryEssays   = saved.filter(i => i._dest === 'library' && i.type === 'essay');
   const wantItems       = saved.filter(i => i._dest === 'want');
 
+  const libraryBooks    = saved.filter(i => i._dest === 'library' && i.type === 'book');
+  const libraryLectures = saved.filter(i => i._dest === 'library' && i.type === 'lecture');
+
   libraryPodcasts.forEach(p => { if (!podcasts.find(x => x.id === p.id)) podcasts.push(p); });
   libraryEssays.forEach(e => { if (!essays.find(x => x.id === e.id)) essays.push(e); });
+  libraryBooks.forEach(b => { if (!books.find(x => x.id === b.id)) books.push(b); });
+  libraryLectures.forEach(l => { if (!lectures.find(x => x.id === l.id)) lectures.push(l); });
   wantItems.forEach(w => { if (!wishlist.find(x => x.id === w.id)) wishlist.push(w); });
 }
 
@@ -1477,20 +1484,38 @@ function addUserItem(item) {
 // ADD FORM
 // ─────────────────────────────────────────
 
-async function fetchPageTitle(url) {
+async function fetchUrlMetadata(url) {
   try {
     const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
-    if (!res.ok) return '';
-    const data = await res.json();
-    const match = data.contents?.match(/<title[^>]*>([^<]+)<\/title>/i);
-    return match ? match[1].replace(/\s+/g, ' ').trim() : '';
+    if (!res.ok) return {};
+    const { contents } = await res.json();
+    if (!contents) return {};
+
+    const getMeta = (attr, val) => {
+      const a = contents.match(new RegExp(`<meta[^>]+${attr}=["']${val}["'][^>]*content=["']([^"']+)["']`, 'i'));
+      const b = contents.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]*${attr}=["']${val}["']`, 'i'));
+      return (a || b)?.[1]?.trim() || '';
+    };
+
+    const title  = getMeta('property', 'og:title') || getMeta('name', 'twitter:title') ||
+                   contents.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.replace(/\s+/g, ' ').trim() || '';
+    const image  = getMeta('property', 'og:image') || getMeta('name', 'twitter:image');
+    const author = getMeta('property', 'og:article:author') || getMeta('name', 'author');
+
+    return { title, image, author };
   } catch {
-    return '';
+    return {};
   }
+}
+
+function extractYouTubeId(url) {
+  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return m?.[1] || '';
 }
 
 function detectType(url) {
   const u = url.toLowerCase();
+  if (u.includes('youtube.com') || u.includes('youtu.be')) return 'lecture';
   const podcastDomains = ['spotify.com', 'podcasts.apple.com', 'overcast.fm',
     'pocketcasts.com', 'anchor.fm', 'buzzsprout.com', 'simplecast.com',
     'podbean.com', 'soundcloud.com', 'acast.com', 'transistor.fm', 'podfollow.com'];
@@ -1498,10 +1523,31 @@ function detectType(url) {
   return 'essay';
 }
 
+function showCoverPreview(imageUrl) {
+  const preview = document.getElementById('add-cover-preview');
+  const img     = document.getElementById('add-cover-img');
+  if (imageUrl) {
+    img.src = imageUrl;
+    img.onload = () => preview.classList.remove('hidden');
+    img.onerror = () => preview.classList.add('hidden');
+  } else {
+    preview.classList.add('hidden');
+  }
+}
+
+function updateAddFormFields() {
+  const type = document.getElementById('add-type').value;
+  const labels = { essay: 'Author', podcast: 'Podcast / Show', book: 'Author', lecture: 'Channel / Organisation' };
+  const placeholders = { essay: 'Author name…', podcast: 'Podcast name…', book: 'Author name…', lecture: 'Channel or institution…' };
+  document.getElementById('add-author-label').textContent = labels[type] || 'Author';
+  document.getElementById('add-author').placeholder = placeholders[type] || 'Author…';
+  document.getElementById('add-book-fields').classList.toggle('hidden', type !== 'book');
+}
+
 function openAddModal(defaultType) {
   const typeEl = document.getElementById('add-type');
   if (defaultType) typeEl.value = defaultType;
-  updateAuthorLabel();
+  updateAddFormFields();
   document.getElementById('add-modal').classList.remove('hidden');
   document.body.classList.add('modal-open');
   setTimeout(() => document.getElementById('add-url').focus(), 50);
@@ -1510,51 +1556,52 @@ function openAddModal(defaultType) {
 function closeAddModal() {
   document.getElementById('add-modal').classList.add('hidden');
   document.body.classList.remove('modal-open');
-  // Reset form
-  ['add-url', 'add-title', 'add-author', 'add-notes'].forEach(id => {
+  ['add-url', 'add-title', 'add-author', 'add-notes', 'add-cover-url'].forEach(id => {
     document.getElementById(id).value = '';
   });
   document.getElementById('add-year').value = new Date().getFullYear();
-}
-
-function updateAuthorLabel() {
-  const type = document.getElementById('add-type').value;
-  document.getElementById('add-author-label').textContent =
-    type === 'podcast' ? 'Podcast / Show' : 'Author';
-  document.getElementById('add-author').placeholder =
-    type === 'podcast' ? 'Podcast name…' : 'Author name…';
+  document.getElementById('add-cover-preview').classList.add('hidden');
+  document.getElementById('add-rating').value = 3;
+  document.getElementById('add-stars').querySelectorAll('[data-star]').forEach(b => b.classList.remove('active'));
+  document.getElementById('add-type').value = 'essay';
+  updateAddFormFields();
 }
 
 function handleAddSubmit() {
-  const url    = document.getElementById('add-url').value.trim();
-  const type   = document.getElementById('add-type').value;
-  const dest   = document.getElementById('add-dest').value;
-  const title  = document.getElementById('add-title').value.trim();
-  const author = document.getElementById('add-author').value.trim();
-  const year   = parseInt(document.getElementById('add-year').value) || new Date().getFullYear();
-  const notes  = document.getElementById('add-notes').value.trim();
+  const url      = document.getElementById('add-url').value.trim();
+  const type     = document.getElementById('add-type').value;
+  const dest     = document.getElementById('add-dest').value;
+  const title    = document.getElementById('add-title').value.trim();
+  const author   = document.getElementById('add-author').value.trim();
+  const year     = parseInt(document.getElementById('add-year').value) || new Date().getFullYear();
+  const notes    = document.getElementById('add-notes').value.trim();
+  const coverUrl = document.getElementById('add-cover-url').value.trim();
+  const rating   = parseInt(document.getElementById('add-rating').value) || 3;
+  const genre    = document.getElementById('add-genre').value || 'Fiction';
 
-  if (!title) {
-    document.getElementById('add-title').focus();
-    return;
-  }
+  if (!title) { document.getElementById('add-title').focus(); return; }
 
-  // Generate a unique ID (timestamp-based, won't clash with hardcoded items)
   const id = Date.now();
-
   let item;
+
   if (type === 'podcast') {
-    item = { id, type: 'podcast', _dest: dest, title, show: author, episodeUrl: url, coverUrl: '', yearListened: year, notes };
+    item = { id, type: 'podcast', _dest: dest, title, show: author, episodeUrl: url, coverUrl, yearListened: year, notes };
+  } else if (type === 'book') {
+    item = { id, type: 'book', _dest: dest, title, author, isbn13: '', isbn: '', coverUrl, rating, genre, yearRead: year, review: notes };
+  } else if (type === 'lecture') {
+    const youtubeId = extractYouTubeId(url);
+    item = { id, type: 'lecture', _dest: dest, title, channel: author, youtubeId: youtubeId || '', courseUrl: youtubeId ? '' : url, yearWatched: year, notes };
   } else {
-    item = { id, type: 'essay', _dest: dest, title, author, url, yearRead: year, notes };
+    item = { id, type: 'essay', _dest: dest, title, author, url, coverUrl, yearRead: year, notes };
   }
 
   addUserItem(item);
 
-  // Push into the live array and re-render
   if (dest === 'library') {
     if (type === 'podcast') { podcasts.push(item); renderPodcastsSection(); }
-    else                    { essays.push(item);   renderEssaysSection(); }
+    else if (type === 'book') { books.push(item); renderCatalogue(); renderGenrePills(); renderYearOptions(); }
+    else if (type === 'lecture') { lectures.push(item); renderLecturesSection(); }
+    else { essays.push(item); renderEssaysSection(); }
   } else {
     wishlist.push(item);
     renderWantSection();
@@ -1564,16 +1611,54 @@ function handleAddSubmit() {
   renderHomeCards();
   closeAddModal();
 
-  // Navigate to where the item was added
   if (dest === 'library') {
     showView('library');
-    switchLibraryTab(type === 'podcast' ? 'podcasts' : 'essays');
+    const tabMap = { podcast: 'podcasts', book: 'books', lecture: 'lectures', essay: 'essays' };
+    switchLibraryTab(tabMap[type] || 'essays');
   } else {
     showView('want');
   }
 }
 
+function setupStarRating() {
+  const starsEl = document.getElementById('add-stars');
+  const ratingInput = document.getElementById('add-rating');
+
+  starsEl.addEventListener('click', e => {
+    const btn = e.target.closest('[data-star]');
+    if (!btn) return;
+    const n = parseInt(btn.dataset.star);
+    ratingInput.value = n;
+    starsEl.querySelectorAll('[data-star]').forEach(b =>
+      b.classList.toggle('active', parseInt(b.dataset.star) <= n)
+    );
+  });
+
+  starsEl.addEventListener('mouseover', e => {
+    const btn = e.target.closest('[data-star]');
+    if (!btn) return;
+    const n = parseInt(btn.dataset.star);
+    starsEl.querySelectorAll('[data-star]').forEach(b =>
+      b.classList.toggle('hover', parseInt(b.dataset.star) <= n)
+    );
+  });
+
+  starsEl.addEventListener('mouseleave', () => {
+    starsEl.querySelectorAll('[data-star]').forEach(b => b.classList.remove('hover'));
+  });
+}
+
 function setupAddForm() {
+  // Populate genre dropdown from GENRE_ORDER
+  const genreSelect = document.getElementById('add-genre');
+  GENRE_ORDER.forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g; opt.textContent = g;
+    genreSelect.appendChild(opt);
+  });
+
+  setupStarRating();
+
   document.getElementById('add-item-btn').addEventListener('click', () => openAddModal());
   document.getElementById('add-item-btn-want').addEventListener('click', () => {
     openAddModal();
@@ -1585,33 +1670,34 @@ function setupAddForm() {
     if (e.target === e.currentTarget) closeAddModal();
   });
 
-  let titleFetchTimer = null;
+  let metaFetchTimer = null;
   document.getElementById('add-url').addEventListener('input', e => {
     const url = e.target.value.trim();
     const detected = detectType(url);
     document.getElementById('add-type').value = detected;
-    updateAuthorLabel();
+    updateAddFormFields();
 
-    // Auto-fetch page title for essays
-    if (detected === 'essay' && url.startsWith('http')) {
-      clearTimeout(titleFetchTimer);
-      titleFetchTimer = setTimeout(async () => {
-        const titleEl = document.getElementById('add-title');
-        if (titleEl.value.trim()) return; // don't overwrite user input
-        const fetched = await fetchPageTitle(url);
-        if (fetched && !titleEl.value.trim()) titleEl.value = fetched;
+    if (url.startsWith('http')) {
+      clearTimeout(metaFetchTimer);
+      metaFetchTimer = setTimeout(async () => {
+        const meta = await fetchUrlMetadata(url);
+        const titleEl  = document.getElementById('add-title');
+        const authorEl = document.getElementById('add-author');
+        if (meta.title  && !titleEl.value.trim())  titleEl.value  = meta.title;
+        if (meta.author && !authorEl.value.trim()) authorEl.value = meta.author;
+        if (meta.image) {
+          document.getElementById('add-cover-url').value = meta.image;
+          showCoverPreview(meta.image);
+        }
       }, 700);
     }
   });
 
-  document.getElementById('add-type').addEventListener('change', updateAuthorLabel);
-
+  document.getElementById('add-type').addEventListener('change', updateAddFormFields);
   document.getElementById('add-submit').addEventListener('click', handleAddSubmit);
 
-  // Also close on Escape (already handled globally but needs to target this modal too)
   document.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !document.getElementById('add-modal').classList.contains('hidden')) {
-      // Allow Enter in textarea, submit on Enter elsewhere
       if (document.activeElement.tagName !== 'TEXTAREA') handleAddSubmit();
     }
   });
@@ -1631,24 +1717,29 @@ function handleShareTarget() {
   // Remove params so a reload doesn't re-add
   window.history.replaceState({}, '', window.location.pathname);
 
-  const item = {
-    id: Date.now(),
-    type: 'essay',
-    _dest: 'want',
-    title: sharedTitle || sharedUrl,
-    author: '',
-    url: sharedUrl,
-    yearRead: new Date().getFullYear(),
-    notes: '',
-  };
+  // Open the add modal pre-filled so the user can choose type, destination, and confirm
+  openAddModal();
+  document.getElementById('add-dest').value = 'want';
+  document.getElementById('add-url').value = sharedUrl;
 
-  addUserItem(item);
-  wishlist.push(item);
-  renderWantSection();
-  renderStats();
-  renderHomeCards();
+  const detected = detectType(sharedUrl);
+  document.getElementById('add-type').value = detected;
+  updateAddFormFields();
 
-  showToast(`✓ Added to reading list`);
+  // Fetch metadata in the background
+  fetchUrlMetadata(sharedUrl).then(meta => {
+    const titleEl  = document.getElementById('add-title');
+    const authorEl = document.getElementById('add-author');
+    if (!titleEl.value.trim())  titleEl.value  = meta.title  || sharedTitle || sharedUrl;
+    if (!authorEl.value.trim() && meta.author) authorEl.value = meta.author;
+    if (meta.image) {
+      document.getElementById('add-cover-url').value = meta.image;
+      showCoverPreview(meta.image);
+    }
+  });
+
+  // Set title immediately if available (before fetch completes)
+  if (sharedTitle) document.getElementById('add-title').value = sharedTitle;
 }
 
 function showToast(message) {
@@ -1668,9 +1759,9 @@ function showToast(message) {
 // ─────────────────────────────────────────
 
 function setupQuickAddModal() {
-  // Build bookmarklet href from the configured Firebase URL
+  // Build bookmarklet href — shows a floating picker on the page
   const fb = FIREBASE_DB_URL;
-  const code = `(function(){var FB=${JSON.stringify(fb)};var item={id:Date.now(),type:'essay',_dest:'want',title:document.title,author:'',url:location.href,yearRead:new Date().getFullYear(),notes:''};fetch(FB+'/library_user_items.json').then(r=>r.json()).then(function(data){var items=Array.isArray(data)?data:[];items.push(item);return fetch(FB+'/library_user_items.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(items)});}).then(function(){var d=document.createElement('div');d.style='position:fixed;top:20px;right:20px;background:#2d6a4f;color:#fff;padding:12px 20px;border-radius:8px;font:14px/1.5 system-ui;z-index:2147483647;box-shadow:0 4px 12px rgba(0,0,0,.25)';d.textContent='\u2713 Added to reading list';document.body.appendChild(d);setTimeout(function(){d.remove();},2500);}).catch(function(){alert('Could not add to reading list');});})()`;
+  const code = `(function(){document.getElementById('__lib__')&&document.getElementById('__lib__').remove();var ogT=document.querySelector('meta[property="og:title"]');var ogI=document.querySelector('meta[property="og:image"]');var T=ogT?ogT.content:document.title;var IMG=ogI?ogI.content:'';var U=location.href;var Y=new Date().getFullYear();var FB=${JSON.stringify(fb)};function save(type,dest){document.getElementById('__lib__').remove();var item={id:Date.now(),type:type,_dest:dest,title:T,author:'',url:U,coverUrl:IMG,yearRead:Y,yearListened:Y,yearWatched:Y,show:'',channel:'',notes:''};fetch(FB+'/library_user_items.json').then(r=>r.json()).then(data=>{var items=Array.isArray(data)?data:[];items.push(item);return fetch(FB+'/library_user_items.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(items)});}).then(()=>{var d=document.createElement('div');d.style='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2d6a4f;color:#fff;padding:10px 22px;border-radius:20px;font:700 14px system-ui;z-index:2147483647;box-shadow:0 4px 16px rgba(0,0,0,.25)';d.textContent='\u2713 Saved';document.body.appendChild(d);setTimeout(()=>d.remove(),2200);}).catch(()=>alert('Could not save'));}var ov=document.createElement('div');ov.id='__lib__';ov.style='position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.35);display:flex;align-items:flex-start;justify-content:flex-end;padding:18px';var card=document.createElement('div');card.style='background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.28);padding:20px;width:270px;font:14px/1.5 system-ui;position:relative';var ttl=document.createElement('div');ttl.style='font-weight:700;color:#1a1208;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';ttl.textContent=T.length>52?T.slice(0,52)+'\u2026':T;var host=document.createElement('div');host.style='font-size:12px;color:#7a6248;margin-bottom:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';try{host.textContent=new URL(U).hostname;}catch(e){host.textContent=U;}var lbl=document.createElement('div');lbl.style='font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#7a6248;margin-bottom:8px';lbl.textContent='Add to';var grid=document.createElement('div');grid.style='display:grid;grid-template-columns:1fr 1fr;gap:8px';[['Reading List','essay','want','#8C1515'],['Essays','essay','library','#2d6a4f'],['Podcasts','podcast','library','#1a4a7a'],['Books','book','library','#5a3a1a']].forEach(function(b){var btn=document.createElement('button');btn.textContent=b[0];btn.style='background:'+b[3]+';color:#fff;border:none;border-radius:7px;padding:9px 10px;font:700 13px system-ui;cursor:pointer';btn.onclick=function(){save(b[1],b[2]);};grid.appendChild(btn);});var x=document.createElement('button');x.textContent='\u00d7';x.style='position:absolute;top:10px;right:14px;background:none;border:none;font-size:22px;line-height:1;cursor:pointer;color:#aaa';x.onclick=function(){ov.remove();};card.appendChild(x);card.appendChild(ttl);card.appendChild(host);card.appendChild(lbl);card.appendChild(grid);ov.appendChild(card);document.body.appendChild(ov);ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});})()`;
   document.getElementById('bookmarklet-link').href = 'javascript:' + code;
 
   document.getElementById('setup-btn').addEventListener('click', () => {

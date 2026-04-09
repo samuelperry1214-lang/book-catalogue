@@ -1288,6 +1288,55 @@ body.modal-open { overflow: hidden; }
 }
 
 /* ─────────────────────────────────────────
+   ADD MODAL — COVER PREVIEW + STAR RATING
+───────────────────────────────────────── */
+.add-title-cover-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.add-field-grow { flex: 1; min-width: 0; }
+
+.add-cover-preview {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+  margin-top: 1.4rem; /* align with input */
+}
+
+.add-cover-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.add-stars {
+  display: flex;
+  gap: 2px;
+  margin-top: 0.35rem;
+}
+
+.add-stars button {
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  color: var(--border);
+  cursor: pointer;
+  padding: 0 1px;
+  line-height: 1;
+  transition: color 0.1s;
+}
+
+.add-stars button.active,
+.add-stars button.hover { color: var(--wood); }
+
+/* ─────────────────────────────────────────
    QUICK-ADD: SETUP BUTTON + MODAL
 ───────────────────────────────────────── */
 .home-setup-row {
