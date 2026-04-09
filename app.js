@@ -1637,27 +1637,41 @@ async function applyDeletedIds() {
 // ─────────────────────────────────────────
 
 async function fetchUrlMetadata(url) {
-  try {
-    const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
-    if (!res.ok) return {};
-    const { contents } = await res.json();
-    if (!contents) return {};
+  // Try two proxies in sequence — some sites (e.g. New Yorker) block one but not the other
+  const fetchers = [
+    async () => {
+      const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+      if (!r.ok) return null;
+      const d = await r.json();
+      return d.contents || null;
+    },
+    async () => {
+      const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
+      if (!r.ok) return null;
+      return r.text();
+    },
+  ];
 
-    const getMeta = (attr, val) => {
-      const a = contents.match(new RegExp(`<meta[^>]+${attr}=["']${val}["'][^>]*content=["']([^"']+)["']`, 'i'));
-      const b = contents.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]*${attr}=["']${val}["']`, 'i'));
-      return (a || b)?.[1]?.trim() || '';
-    };
+  for (const fetch_ of fetchers) {
+    try {
+      const contents = await fetch_();
+      if (!contents) continue;
 
-    const title  = getMeta('property', 'og:title') || getMeta('name', 'twitter:title') ||
-                   contents.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.replace(/\s+/g, ' ').trim() || '';
-    const image  = getMeta('property', 'og:image') || getMeta('name', 'twitter:image');
-    const author = getMeta('property', 'og:article:author') || getMeta('name', 'author');
+      const getMeta = (attr, val) => {
+        const a = contents.match(new RegExp(`<meta[^>]+${attr}=["']${val}["'][^>]*content=["']([^"']+)["']`, 'i'));
+        const b = contents.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]*${attr}=["']${val}["']`, 'i'));
+        return (a || b)?.[1]?.trim() || '';
+      };
 
-    return { title, image, author };
-  } catch {
-    return {};
+      const title  = getMeta('property', 'og:title') || getMeta('name', 'twitter:title') ||
+                     contents.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.replace(/\s+/g, ' ').trim() || '';
+      const image  = getMeta('property', 'og:image') || getMeta('name', 'twitter:image');
+      const author = getMeta('property', 'og:article:author') || getMeta('name', 'author');
+
+      if (title || image) return { title, image, author };
+    } catch { /* try next proxy */ }
   }
+  return {};
 }
 
 function extractYouTubeId(url) {
@@ -1937,6 +1951,8 @@ function closeSetupModal() {
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
+  // When a new service worker takes over, reload so the update is applied automatically
+  navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
