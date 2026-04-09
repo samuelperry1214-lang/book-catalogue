@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Library</title>
   <meta name="description" content="A personal reading catalogue">
+  <meta name="theme-color" content="#1E150A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="My Library">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -36,6 +42,10 @@
       </div>
 
       <div id="home-results" class="home-results hidden" aria-live="polite" aria-label="Search results"></div>
+
+      <div class="home-setup-row">
+        <button id="setup-btn" class="setup-link">⚡ Quick-add setup</button>
+      </div>
 
       <nav class="home-nav" id="home-nav" aria-label="Library sections">
         <button class="home-card" id="nav-library" aria-label="Open Library">
@@ -195,6 +205,30 @@
           <p id="modal-year" class="modal-year"></p>
           <div id="modal-review" class="modal-review"></div>
           <a id="modal-link" class="modal-link hidden" href="#" target="_blank" rel="noopener noreferrer"></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── QUICK-ADD SETUP MODAL ─── -->
+  <div id="setup-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="setup-modal-title">
+    <div class="modal-content add-modal-content">
+      <button id="setup-modal-close" aria-label="Close">&times;</button>
+      <div class="add-modal-body">
+        <h2 id="setup-modal-title" class="add-modal-title">Quick-Add Setup</h2>
+
+        <div class="setup-section">
+          <h3 class="setup-section-title">🔖 Browser Bookmarklet</h3>
+          <p class="setup-section-desc">Drag the button below to your bookmarks bar. Click it on any webpage to instantly add it to your reading list.</p>
+          <a id="bookmarklet-link" class="bookmarklet-btn" title="Drag me to your bookmarks bar">+ Add to Reading List</a>
+          <p class="setup-section-hint">Works in Chrome, Firefox, Safari, Edge.</p>
+        </div>
+
+        <div class="setup-section">
+          <h3 class="setup-section-title">📱 Mobile Share Target</h3>
+          <p class="setup-section-desc">Install this app to your home screen. Then use the Share button in your browser to add any page directly to your reading list — no typing needed.</p>
+          <p class="setup-section-steps"><strong>iPhone/iPad:</strong> Safari → Share <span class="share-icon">⎋</span> → Add to Home Screen<br>
+          <strong>Android:</strong> Chrome → ⋮ → Add to Home Screen</p>
         </div>
       </div>
     </div>

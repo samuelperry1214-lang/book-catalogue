@@ -1370,7 +1370,8 @@ function setupEventListeners() {
   document.getElementById('modal-close').addEventListener('click', closeModal);
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-      if (!document.getElementById('add-modal').classList.contains('hidden')) closeAddModal();
+      if (!document.getElementById('setup-modal').classList.contains('hidden')) closeSetupModal();
+      else if (!document.getElementById('add-modal').classList.contains('hidden')) closeAddModal();
       else closeModal();
     }
   });
@@ -1617,8 +1618,83 @@ function setupAddForm() {
 }
 
 // ─────────────────────────────────────────
+// SHARE TARGET
+// ─────────────────────────────────────────
+
+function handleShareTarget() {
+  const params = new URLSearchParams(window.location.search);
+  const sharedUrl   = params.get('url') || (params.get('text') || '').match(/https?:\/\/\S+/)?.[0] || '';
+  const sharedTitle = params.get('title') || '';
+
+  if (!sharedUrl) return;
+
+  // Remove params so a reload doesn't re-add
+  window.history.replaceState({}, '', window.location.pathname);
+
+  const item = {
+    id: Date.now(),
+    type: 'essay',
+    _dest: 'want',
+    title: sharedTitle || sharedUrl,
+    author: '',
+    url: sharedUrl,
+    yearRead: new Date().getFullYear(),
+    notes: '',
+  };
+
+  addUserItem(item);
+  wishlist.push(item);
+  renderWantSection();
+  renderStats();
+  renderHomeCards();
+
+  showToast(`✓ Added to reading list`);
+}
+
+function showToast(message) {
+  const toast = document.createElement('div');
+  toast.className = 'share-toast';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('share-toast--show'));
+  setTimeout(() => {
+    toast.classList.remove('share-toast--show');
+    setTimeout(() => toast.remove(), 300);
+  }, 2500);
+}
+
+// ─────────────────────────────────────────
+// QUICK-ADD SETUP MODAL (bookmarklet + PWA)
+// ─────────────────────────────────────────
+
+function setupQuickAddModal() {
+  // Build bookmarklet href from the configured Firebase URL
+  const fb = FIREBASE_DB_URL;
+  const code = `(function(){var FB=${JSON.stringify(fb)};var item={id:Date.now(),type:'essay',_dest:'want',title:document.title,author:'',url:location.href,yearRead:new Date().getFullYear(),notes:''};fetch(FB+'/library_user_items.json').then(r=>r.json()).then(function(data){var items=Array.isArray(data)?data:[];items.push(item);return fetch(FB+'/library_user_items.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(items)});}).then(function(){var d=document.createElement('div');d.style='position:fixed;top:20px;right:20px;background:#2d6a4f;color:#fff;padding:12px 20px;border-radius:8px;font:14px/1.5 system-ui;z-index:2147483647;box-shadow:0 4px 12px rgba(0,0,0,.25)';d.textContent='\u2713 Added to reading list';document.body.appendChild(d);setTimeout(function(){d.remove();},2500);}).catch(function(){alert('Could not add to reading list');});})()`;
+  document.getElementById('bookmarklet-link').href = 'javascript:' + code;
+
+  document.getElementById('setup-btn').addEventListener('click', () => {
+    document.getElementById('setup-modal').classList.remove('hidden');
+    document.body.classList.add('modal-open');
+  });
+  document.getElementById('setup-modal-close').addEventListener('click', closeSetupModal);
+  document.getElementById('setup-modal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeSetupModal();
+  });
+}
+
+function closeSetupModal() {
+  document.getElementById('setup-modal').classList.add('hidden');
+  document.body.classList.remove('modal-open');
+}
+
+// ─────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
   await mergeUserItems();
@@ -1633,5 +1709,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderWantSection();
   setupEventListeners();
   setupAddForm();
+  setupQuickAddModal();
   document.getElementById('add-year').value = new Date().getFullYear();
+  handleShareTarget();
 });
