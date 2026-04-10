@@ -883,7 +883,7 @@ function renderWishCard(item) {
             <span class="essay-placeholder-divider"></span>
             <span class="essay-placeholder-mark">❝</span>
           </div>
-          ${item.coverUrl ? `<img class="cover-img" src="${escHtml(item.coverUrl)}" alt="${escHtml(item.title)}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'">` : ''}
+          ${item.coverUrl ? `<img class="cover-img" src="${escHtml(item.coverUrl)}" alt="${escHtml(item.title)}" loading="lazy" onload="onEssayCoverLoad(this)" onerror="this.style.display='none'">` : ''}
           ${substack ? `<div class="source-badge source-badge--substack" title="Substack">S</div>` : ''}
           <div class="wish-badge" title="Want to read">🔖</div>
         </div>
@@ -1207,7 +1207,7 @@ function renderEssayCard(essay) {
           <span class="essay-placeholder-divider"></span>
           <span class="essay-placeholder-mark">❝</span>
         </div>
-        ${hasCover ? `<img class="cover-img" src="${escHtml(essay.coverUrl)}" alt="${escHtml(essay.title)}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'">` : ''}
+        ${hasCover ? `<img class="cover-img" src="${escHtml(essay.coverUrl)}" alt="${escHtml(essay.title)}" loading="lazy" onload="onEssayCoverLoad(this)" onerror="this.style.display='none'">` : ''}
         ${substack ? `<div class="source-badge source-badge--substack" title="Substack">S</div>` : ''}
         ${hasNotes ? `<div class="review-badge" title="Has notes">✍</div>` : ''}
       </div>
@@ -2340,6 +2340,15 @@ function setupStarRating() {
   starsEl.addEventListener('mouseleave', () => {
     starsEl.querySelectorAll('[data-star]').forEach(b => b.classList.remove('hover'));
   });
+}
+
+// Called by essay card cover images on load.
+// Marks landscape images so CSS can letterbox them instead of cropping.
+function onEssayCoverLoad(img) {
+  img.classList.add('loaded');
+  if (img.naturalWidth > img.naturalHeight) {
+    img.closest('.cover-wrap').classList.add('cover-wrap--landscape');
+  }
 }
 
 function setHeroImage(img) {

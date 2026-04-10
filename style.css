@@ -808,6 +808,18 @@ body.modal-open { overflow: hidden; }
   background: linear-gradient(145deg, #EDE5D5 0%, #D8CBAF 100%);
 }
 
+/* Landscape images: letterbox instead of crop */
+.cover-wrap--essay.cover-wrap--landscape {
+  background: #0f0b08;
+}
+.cover-wrap--essay.cover-wrap--landscape .cover-img {
+  object-fit: contain;
+}
+/* Hide the text placeholder when a real image is shown */
+.cover-wrap--essay.cover-wrap--landscape .cover-placeholder--essay {
+  display: none;
+}
+
 .cover-placeholder--essay {
   flex-direction: column;
   gap: 0.5rem;
