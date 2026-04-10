@@ -1034,11 +1034,12 @@ body.on-home > header { display: none; }
 
 /* ─── Large hero title ─── */
 .home-hero-title {
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: clamp(3.2rem, 9vw, 6.5rem);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 600;
+  font-style: italic;
+  font-size: clamp(4rem, 11vw, 8rem);
   color: #fff;
-  letter-spacing: -0.03em;
+  letter-spacing: 0.01em;
   line-height: 1;
   text-align: center;
   margin-bottom: 2.8rem;
@@ -1230,12 +1231,13 @@ body.on-home > header { display: none; }
 }
 
 .home-card-title {
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: clamp(1.6rem, 2.8vw, 2.1rem);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 600;
+  font-style: italic;
+  font-size: clamp(2rem, 3.2vw, 2.6rem);
   color: #fff;
   line-height: 1.05;
-  letter-spacing: -0.025em;
+  letter-spacing: 0.01em;
 }
 
 .home-card-sub {
