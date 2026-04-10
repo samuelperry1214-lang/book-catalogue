@@ -874,10 +874,11 @@ function renderWishCard(item) {
   }
   if (item.type === 'essay') {
     const substack = isSubstack(item.url);
+    const forcePortrait = isPortraitPreferred(item.url) ? 'data-force-portrait="1"' : '';
     return `
       <article class="item-card essay-card" data-id="${item.id}" data-type="essay" role="button" tabindex="0"
         aria-label="${escHtml(item.title)} by ${escHtml(item.author || '')}">
-        <div class="cover-wrap cover-wrap--essay">
+        <div class="cover-wrap cover-wrap--essay" ${forcePortrait}>
           <div class="cover-placeholder cover-placeholder--essay" aria-hidden="true">
             <span class="essay-placeholder-pub">${escHtml(publicationLabel(item.url || ''))}</span>
             <span class="essay-placeholder-divider"></span>
@@ -1107,6 +1108,11 @@ function isSubstack(url) {
   return url && url.includes('substack.com');
 }
 
+// Sources where the fetched image looks better kept in portrait (cropped to card shape)
+function isPortraitPreferred(url) {
+  return url && url.includes('newyorker.com');
+}
+
 function renderLecturesSection() {
   const el = document.getElementById('lectures-section');
   if (!lectures.length) {
@@ -1193,6 +1199,7 @@ function renderEssayCard(essay) {
   const hasNotes = essay.notes && essay.notes.trim().length > 0;
   const substack = isSubstack(essay.url);
   const hasCover = !!essay.coverUrl;
+  const forcePortrait = isPortraitPreferred(essay.url) ? 'data-force-portrait="1"' : '';
   return `
     <article
       class="item-card essay-card"
@@ -1201,7 +1208,7 @@ function renderEssayCard(essay) {
       tabindex="0"
       aria-label="${escHtml(essay.title)} by ${escHtml(essay.author)}"
     >
-      <div class="cover-wrap cover-wrap--essay">
+      <div class="cover-wrap cover-wrap--essay" ${forcePortrait}>
         <div class="cover-placeholder cover-placeholder--essay" aria-hidden="true">
           <span class="essay-placeholder-pub">${escHtml(publicationLabel(essay.url || ''))}</span>
           <span class="essay-placeholder-divider"></span>
@@ -2343,11 +2350,13 @@ function setupStarRating() {
 }
 
 // Called by essay card cover images on load.
-// Marks landscape images so CSS can letterbox them instead of cropping.
+// Marks landscape images so CSS can letterbox them with glass panes.
+// Skips detection for portrait-preferred sources (e.g. New Yorker).
 function onEssayCoverLoad(img) {
   img.classList.add('loaded');
-  if (img.naturalWidth > img.naturalHeight) {
-    img.closest('.cover-wrap').classList.add('cover-wrap--landscape');
+  const wrap = img.closest('.cover-wrap');
+  if (wrap && wrap.dataset.forcePortrait !== '1' && img.naturalWidth > img.naturalHeight) {
+    wrap.classList.add('cover-wrap--landscape');
   }
 }
 
