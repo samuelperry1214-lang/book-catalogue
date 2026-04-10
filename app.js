@@ -1,4 +1,60 @@
 // ─────────────────────────────────────────
+// AUTH
+// ─────────────────────────────────────────
+
+const AUTH_PASSPHRASE = 'changeme'; // ← set your passphrase here
+const AUTH_KEY = 'lib_auth_expiry';
+const AUTH_DAYS = 90;
+
+function isAuthenticated() {
+  const expiry = parseInt(localStorage.getItem(AUTH_KEY) || '0', 10);
+  return Date.now() < expiry;
+}
+
+function grantAuth() {
+  localStorage.setItem(AUTH_KEY, String(Date.now() + AUTH_DAYS * 86400000));
+}
+
+function showAuthWall(onSuccess) {
+  const overlay = document.createElement('div');
+  overlay.id = 'auth-overlay';
+  overlay.innerHTML = `
+    <div class="auth-box">
+      <h1 class="auth-title">My Library</h1>
+      <p class="auth-subtitle">Enter passphrase to continue</p>
+      <div class="auth-fields">
+        <input type="password" id="auth-input" class="auth-input" placeholder="Passphrase…" autocomplete="current-password">
+        <button id="auth-submit" class="auth-submit">Enter</button>
+      </div>
+      <p id="auth-error" class="auth-error hidden">Incorrect passphrase</p>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  setTimeout(() => document.getElementById('auth-input').focus(), 50);
+
+  function attempt() {
+    const val = document.getElementById('auth-input').value;
+    if (val === AUTH_PASSPHRASE) {
+      grantAuth();
+      overlay.remove();
+      onSuccess();
+    } else {
+      document.getElementById('auth-error').classList.remove('hidden');
+      const box = overlay.querySelector('.auth-box');
+      box.classList.add('auth-shake');
+      setTimeout(() => box.classList.remove('auth-shake'), 400);
+      document.getElementById('auth-input').value = '';
+      document.getElementById('auth-input').focus();
+    }
+  }
+
+  document.getElementById('auth-submit').addEventListener('click', attempt);
+  document.getElementById('auth-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') attempt();
+  });
+}
+
+// ─────────────────────────────────────────
 // DATA
 // ─────────────────────────────────────────
 
@@ -790,7 +846,10 @@ function renderWishCard(item) {
       <article class="item-card podcast-card" data-id="${item.id}" data-type="podcast" role="button" tabindex="0"
         aria-label="${escHtml(item.title)} — ${escHtml(item.show || '')}">
         <div class="cover-wrap cover-wrap--podcast">
-          <div class="cover-placeholder cover-placeholder--podcast" aria-hidden="true">🎙</div>
+          <div class="cover-placeholder cover-placeholder--podcast" aria-hidden="true">
+            <span class="podcast-placeholder-icon">🎙</span>
+            <span class="podcast-placeholder-show">${escHtml(item.show || '')}</span>
+          </div>
           ${item.coverUrl ? `<img class="cover-img" src="${escHtml(item.coverUrl)}" alt="${escHtml(item.show || '')}" loading="lazy" onload="this.classList.add('loaded')">` : ''}
           <div class="wish-badge" title="Want to listen">🔖</div>
         </div>
@@ -807,7 +866,11 @@ function renderWishCard(item) {
       <article class="item-card essay-card" data-id="${item.id}" data-type="essay" role="button" tabindex="0"
         aria-label="${escHtml(item.title)} by ${escHtml(item.author || '')}">
         <div class="cover-wrap cover-wrap--essay">
-          <div class="cover-placeholder cover-placeholder--essay" aria-hidden="true">❝</div>
+          <div class="cover-placeholder cover-placeholder--essay" aria-hidden="true">
+            <span class="essay-placeholder-pub">${escHtml(publicationLabel(item.url || ''))}</span>
+            <span class="essay-placeholder-divider"></span>
+            <span class="essay-placeholder-mark">❝</span>
+          </div>
           ${substack ? `<div class="source-badge source-badge--substack" title="Substack">S</div>` : ''}
           <div class="wish-badge" title="Want to read">🔖</div>
         </div>
@@ -907,7 +970,10 @@ function renderPodcastCard(podcast) {
       aria-label="${escHtml(podcast.title)} — ${escHtml(podcast.show)}"
     >
       <div class="cover-wrap cover-wrap--podcast">
-        <div class="cover-placeholder cover-placeholder--podcast" aria-hidden="true">🎙</div>
+        <div class="cover-placeholder cover-placeholder--podcast" aria-hidden="true">
+          <span class="podcast-placeholder-icon">🎙</span>
+          <span class="podcast-placeholder-show">${escHtml(podcast.show)}</span>
+        </div>
         ${hasCover ? `<img class="cover-img" src="${escHtml(podcast.coverUrl)}" alt="${escHtml(podcast.show)}" loading="lazy" onload="this.classList.add('loaded')">` : ''}
         ${hasNotes ? `<div class="review-badge" title="Has notes">✍</div>` : ''}
       </div>
@@ -1074,7 +1140,11 @@ function renderEssayCard(essay) {
       aria-label="${escHtml(essay.title)} by ${escHtml(essay.author)}"
     >
       <div class="cover-wrap cover-wrap--essay">
-        <div class="cover-placeholder cover-placeholder--essay" aria-hidden="true">❝</div>
+        <div class="cover-placeholder cover-placeholder--essay" aria-hidden="true">
+          <span class="essay-placeholder-pub">${escHtml(publicationLabel(essay.url || ''))}</span>
+          <span class="essay-placeholder-divider"></span>
+          <span class="essay-placeholder-mark">❝</span>
+        </div>
         ${hasCover ? `<img class="cover-img" src="${escHtml(essay.coverUrl)}" alt="${escHtml(essay.title)}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'">` : ''}
         ${substack ? `<div class="source-badge source-badge--substack" title="Substack">S</div>` : ''}
         ${hasNotes ? `<div class="review-badge" title="Has notes">✍</div>` : ''}
@@ -1636,6 +1706,52 @@ async function applyDeletedIds() {
 // ADD FORM
 // ─────────────────────────────────────────
 
+function publicationLabel(url) {
+  const map = {
+    'newyorker.com':        'The New Yorker',
+    'newstatesman.com':     'New Statesman',
+    'economist.com':        'The Economist',
+    'nytimes.com':          'New York Times',
+    'ft.com':               'Financial Times',
+    'theguardian.com':      'The Guardian',
+    'theatlantic.com':      'The Atlantic',
+    'foreignaffairs.com':   'Foreign Affairs',
+    'foreignpolicy.com':    'Foreign Policy',
+    'spectator.co.uk':      'The Spectator',
+    'prospectmagazine.co.uk': 'Prospect',
+    'lrb.co.uk':            'London Review',
+    'nybooks.com':          'NY Review of Books',
+    'irishtimes.com':       'Irish Times',
+    'unherd.com':           'UnHerd',
+    'aeon.co':              'Aeon',
+  };
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '');
+    for (const [domain, label] of Object.entries(map)) {
+      if (host === domain || host.endsWith('.' + domain)) return label;
+    }
+    // Fallback: clean up the domain name
+    return host.split('.')[0].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  } catch {
+    return '';
+  }
+}
+
+function titleFromUrl(url) {
+  try {
+    const parts = new URL(url).pathname.split('/').filter(Boolean);
+    // Walk backwards to find the most slug-like segment (long, not just a 4-digit year)
+    const slug = [...parts].reverse().find(p => p.length > 5 && !/^\d{4}$/.test(p)) || parts.at(-1) || '';
+    return decodeURIComponent(slug)
+      .replace(/\.[a-z]{2,4}$/, '')   // strip .html etc
+      .replace(/[-_]+/g, ' ')
+      .replace(/\b\w/g, c => c.toUpperCase())
+      .trim();
+  } catch {
+    return '';
+  }
+}
+
 async function fetchUrlMetadata(url) {
   // Try two proxies in sequence — some sites (e.g. New Yorker) block one but not the other
   const fetchers = [
@@ -1849,7 +1965,7 @@ function setupAddForm() {
         const meta = await fetchUrlMetadata(url);
         const titleEl  = document.getElementById('add-title');
         const authorEl = document.getElementById('add-author');
-        if (meta.title  && !titleEl.value.trim())  titleEl.value  = meta.title;
+        if (!titleEl.value.trim())  titleEl.value  = meta.title || titleFromUrl(url);
         if (meta.author && !authorEl.value.trim()) authorEl.value = meta.author;
         if (meta.image) {
           document.getElementById('add-cover-url').value = meta.image;
@@ -1896,7 +2012,7 @@ function handleShareTarget() {
   fetchUrlMetadata(sharedUrl).then(meta => {
     const titleEl  = document.getElementById('add-title');
     const authorEl = document.getElementById('add-author');
-    if (!titleEl.value.trim())  titleEl.value  = meta.title  || sharedTitle || sharedUrl;
+    if (!titleEl.value.trim())  titleEl.value  = meta.title  || sharedTitle || titleFromUrl(sharedUrl);
     if (!authorEl.value.trim() && meta.author) authorEl.value = meta.author;
     if (meta.image) {
       document.getElementById('add-cover-url').value = meta.image;
@@ -1955,7 +2071,7 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function initApp() {
   await mergeUserItems();
   await applyDeletedIds();
   renderStats();
@@ -1972,4 +2088,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupQuickAddModal();
   document.getElementById('add-year').value = new Date().getFullYear();
   handleShareTarget();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (!isAuthenticated()) {
+    showAuthWall(() => initApp());
+    return;
+  }
+  initApp();
 });
