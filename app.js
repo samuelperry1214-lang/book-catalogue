@@ -634,6 +634,7 @@ function renderCard(book) {
 function showView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
   document.getElementById(`view-${name}`).classList.remove('hidden');
+  document.body.classList.toggle('on-home', name === 'home');
   window.scrollTo(0, 0);
 }
 
@@ -2426,6 +2427,7 @@ if ('serviceWorker' in navigator) {
 }
 
 async function initApp() {
+  document.body.classList.add('on-home'); // start on home view
   await mergeUserItems();
   await applyDeletedIds();
   await loadTakeaways();

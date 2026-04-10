@@ -1,5 +1,5 @@
-const CACHE = 'library-v8';
-const ASSETS = ['/', '/index.html', '/app.js', '/style.css', '/manifest.json', '/icon.svg'];
+const CACHE = 'library-v9';
+const ASSETS = ['/', '/index.html', '/app.js', '/style.css', '/manifest.json', '/icon.svg', '/hero.jpg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
