@@ -1781,9 +1781,35 @@ function setupEventListeners() {
     switchLibraryTab(tab.dataset.section);
   });
 
-  // Home nav cards
-  document.getElementById('nav-library').addEventListener('click', () => showView('library'));
-  document.getElementById('nav-want').addEventListener('click', () => showView('want'));
+  // Home nav cards — clicking the card goes to the view; section buttons go straight to the tab
+  document.getElementById('nav-library').addEventListener('click', e => {
+    const sectionBtn = e.target.closest('.home-card-section-btn');
+    if (sectionBtn) {
+      e.stopPropagation();
+      showView(sectionBtn.dataset.view);
+      if (sectionBtn.dataset.tab) switchLibraryTab(sectionBtn.dataset.tab);
+    } else {
+      showView('library');
+    }
+  });
+  document.getElementById('nav-want').addEventListener('click', e => {
+    const sectionBtn = e.target.closest('.home-card-section-btn');
+    if (sectionBtn) {
+      e.stopPropagation();
+      showView(sectionBtn.dataset.view);
+    } else {
+      showView('want');
+    }
+  });
+  // Keyboard support for card divs
+  document.querySelectorAll('.home-card[role="button"]').forEach(card => {
+    card.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        card.click();
+      }
+    });
+  });
 
   // Back buttons (delegated — works for both views)
   document.querySelectorAll('.back-btn').forEach(btn => {
