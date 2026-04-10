@@ -1026,38 +1026,107 @@ body.on-home > header { display: none; }
   position: relative;
   z-index: 1;
   padding-top: 0;
-  padding-bottom: 9rem;
+  padding-bottom: 3rem;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-/* ─── Bottom cream banner footer ─── */
+/* ─── Footer: Olympic-colour nav + cream brand strip ─── */
 .home-footer {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   z-index: 2;
-  padding: 1.8rem 2.5rem;
-  background: #F0EAE0;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  pointer-events: auto;
 }
 
-.home-footer-rule {
-  display: none;
+/* Two coloured nav buttons */
+.home-footer-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.home-footer-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 1.6rem 2.2rem;
+  text-align: left;
+  cursor: pointer;
+  border: none;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  transition: filter 0.18s ease;
+}
+
+.home-footer-btn:hover { filter: brightness(1.12); }
+
+/* Library → Olympic blue */
+.home-footer-btn--library { background: #0065BD; }
+
+/* Reading List → Olympic red */
+.home-footer-btn--want    { background: #EF3340; }
+
+.home-footer-btn-eyebrow {
+  font-size: 0.63rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-weight: 600;
+  /* green on library, yellow on want */
+}
+.home-footer-btn--library .home-footer-btn-eyebrow { color: #00A651; }
+.home-footer-btn--want    .home-footer-btn-eyebrow { color: #FCB131; }
+
+.home-footer-btn-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 600;
+  font-style: italic;
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  color: #fff;
+  line-height: 1.05;
+  letter-spacing: 0.01em;
+}
+
+.home-footer-btn-sub {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 0.15rem;
+}
+
+.home-footer-btn-count {
+  display: inline-block;
+  margin-top: 0.9rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  padding: 0.18rem 0.65rem;
+  align-self: flex-start;
+}
+
+/* Cream brand strip below the buttons */
+.home-footer-brand {
+  background: #F0EAE0;
+  padding: 0.8rem 2.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .home-footer-text {
   font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 0.8rem;
+  font-size: 0.84rem;
   font-style: italic;
   color: #6B5740;
   letter-spacing: 0.06em;
-  line-height: 1.5;
 }
 
 .home-footer-text strong {
@@ -1066,7 +1135,7 @@ body.on-home > header { display: none; }
   color: #3A2A1A;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  font-size: 0.7rem;
+  font-size: 0.74rem;
 }
 
 /* ─── Large hero title ─── */
@@ -1334,12 +1403,9 @@ body.on-home > header { display: none; }
    RESPONSIVE — HOME
 ───────────────────────────────────────── */
 @media (max-width: 640px) {
-  .home-nav {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
+  .home-footer-nav { grid-template-columns: 1fr; }
+  .home-footer-btn { padding: 1.3rem 1.5rem; }
   .home-hero-title { margin-bottom: 2rem; }
-  .home-card { padding: 2.2rem 1.8rem; border-radius: 14px; }
 }
 
 /* ─────────────────────────────────────────
@@ -1648,7 +1714,7 @@ body.on-home > header { display: none; }
 .setup-link {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.32);
+  color: #9B8060;
   font-size: 0.72rem;
   font-family: 'Cormorant Garamond', Georgia, serif;
   letter-spacing: 0.08em;
@@ -1656,8 +1722,10 @@ body.on-home > header { display: none; }
   cursor: pointer;
   padding: 0;
   transition: color 0.18s;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
-.setup-link:hover { color: rgba(255, 255, 255, 0.65); }
+.setup-link:hover { color: #3A2A1A; }
 
 .setup-section {
   margin-bottom: 2rem;

@@ -45,33 +45,26 @@
 
       <div id="home-results" class="home-results hidden" aria-live="polite" aria-label="Search results"></div>
 
-      <nav class="home-nav" id="home-nav" aria-label="Library sections">
-        <button class="home-card" id="nav-library" aria-label="Open Library">
-          <span class="home-card-eyebrow">Explore</span>
-          <span class="home-card-title">Library</span>
-          <span class="home-card-sub">Books · Lectures · Podcasts · Essays</span>
-          <span id="home-count-library" class="home-card-count"></span>
-        </button>
-        <button class="home-card" id="nav-want" aria-label="Open Reading List">
-          <span class="home-card-eyebrow">Coming up</span>
-          <span class="home-card-title">Reading List</span>
-          <span class="home-card-sub">Want to Read &amp; Listen</span>
-          <span id="home-count-want" class="home-card-count"></span>
-        </button>
-      </nav>
-
-      <div class="home-setup-row">
-        <button id="setup-btn" class="setup-link">⚡ Quick-add setup</button>
-      </div>
-
     </div>
 
-    <footer class="home-footer" aria-hidden="true">
-      <span class="home-footer-rule"></span>
-      <p class="home-footer-text">
-        <strong>Perry</strong><br>
-        Thought with AI
-      </p>
+    <footer class="home-footer">
+      <nav class="home-footer-nav" id="home-nav" aria-label="Library sections">
+        <button class="home-footer-btn home-footer-btn--library" id="nav-library" aria-label="Open Library">
+          <span class="home-footer-btn-eyebrow">Explore</span>
+          <span class="home-footer-btn-title">Library</span>
+          <span class="home-footer-btn-sub">Books · Lectures · Podcasts · Essays</span>
+          <span id="home-count-library" class="home-footer-btn-count"></span>
+        </button>
+        <button class="home-footer-btn home-footer-btn--want" id="nav-want" aria-label="Open Reading List">
+          <span class="home-footer-btn-eyebrow">Coming up</span>
+          <span class="home-footer-btn-title">Reading List</span>
+          <span class="home-footer-btn-sub">Want to Read &amp; Listen</span>
+          <span id="home-count-want" class="home-footer-btn-count"></span>
+        </button>
+      </nav>
+      <div class="home-footer-brand">
+        <button id="setup-btn" class="setup-link">⚡ Quick-add setup</button>
+      </div>
     </footer>
 
   </div>
