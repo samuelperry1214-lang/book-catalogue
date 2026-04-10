@@ -1003,7 +1003,7 @@ body.on-home > header { display: none; }
   position: relative;
   min-height: 100vh;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   background: url('hero.jpg') center 35% / cover no-repeat;
 }
 
@@ -1072,7 +1072,7 @@ body.on-home > header { display: none; }
   backdrop-filter: blur(20px) saturate(1.5);
   -webkit-backdrop-filter: blur(20px) saturate(1.5);
   border-top: 1px solid rgba(240, 234, 224, 0.20);
-  padding: 1rem 2rem 1.2rem;
+  padding: 1.6rem 2rem 1.8rem;
   display: flex;
   align-items: center;
   justify-content: center;
