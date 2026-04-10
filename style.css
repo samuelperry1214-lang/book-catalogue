@@ -1399,28 +1399,31 @@ body.on-home > header { display: none; }
   }
 
   .home-card {
-    padding: 1.2rem 1rem;
+    padding: 0.9rem 0.85rem;
     border-radius: 12px;
+    gap: 0.15rem;
   }
 
   .home-card-title {
-    font-size: 1.3rem;
+    font-size: 1.15rem;
+    line-height: 1;
   }
 
-  .home-card-count {
-    margin-top: 0.8rem;
-    font-size: 0.6rem;
-    padding: 0.15rem 0.55rem;
-  }
+  .home-card-count { display: none; }
 
+  /* 2×2 grid for section pills */
   .home-card-sections {
-    gap: 0.3rem;
-    margin-top: 0.8rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.28rem;
+    margin-top: 0.6rem;
   }
 
   .home-card-section-btn {
-    font-size: 0.65rem;
-    padding: 0.2rem 0.6rem;
+    font-size: 0.62rem;
+    padding: 0.22rem 0.4rem;
+    text-align: center;
+    border-radius: 4px;
   }
 }
 
