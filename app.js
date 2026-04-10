@@ -2328,6 +2328,7 @@ function setupStarRating() {
 
 function setHeroImage(img) {
   const url = `url('${CSS.escape(img)}')`;
+  document.body.style.backgroundImage = url;          // full-page background
   document.getElementById('view-home').style.backgroundImage = url;
   document.querySelector('header').style.backgroundImage = url;
 }
