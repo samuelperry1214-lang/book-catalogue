@@ -2,7 +2,7 @@
 // AUTH
 // ─────────────────────────────────────────
 
-const AUTH_PASSPHRASE = 'changeme'; // ← set your passphrase here
+const AUTH_PASSPHRASE = 'KweeCourtCorpus';
 const AUTH_KEY = 'lib_auth_expiry';
 const AUTH_DAYS = 90;
 
