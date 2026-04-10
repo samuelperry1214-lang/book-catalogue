@@ -1006,10 +1006,7 @@ function openPodcastModal(id, fromWishlist = false) {
   document.getElementById('modal-year').textContent   =
     podcast.yearListened ? `Listened in ${podcast.yearListened}` : 'Want to listen';
 
-  const reviewEl = document.getElementById('modal-review');
-  const notesText = podcast.notes?.trim();
-  reviewEl.textContent = notesText || 'No notes written.';
-  reviewEl.classList.toggle('no-review', !notesText);
+  renderModalNotes(id, podcast.notes || '');
 
   const linkEl = document.getElementById('modal-link');
   if (podcast.episodeUrl) {
@@ -1179,14 +1176,7 @@ function openLectureModal(id, fromWishlist = false) {
   document.getElementById('modal-year').textContent   =
     lecture.yearWatched ? `Watched in ${lecture.yearWatched}` : 'Want to watch';
 
-  const reviewEl = document.getElementById('modal-review');
-  if (lecture.notes && lecture.notes.trim()) {
-    reviewEl.textContent = lecture.notes;
-    reviewEl.classList.remove('no-review');
-  } else {
-    reviewEl.textContent = 'No notes written.';
-    reviewEl.classList.add('no-review');
-  }
+  renderModalNotes(id, lecture.notes || '');
 
   const linkEl = document.getElementById('modal-link');
   const linkUrl = lecture.youtubeId
@@ -1237,14 +1227,7 @@ function openEssayModal(id, fromWishlist = false) {
   document.getElementById('modal-year').textContent   =
     essay.yearRead ? `Read in ${essay.yearRead}` : 'Want to read';
 
-  const reviewEl = document.getElementById('modal-review');
-  if (essay.notes && essay.notes.trim()) {
-    reviewEl.textContent = essay.notes;
-    reviewEl.classList.remove('no-review');
-  } else {
-    reviewEl.textContent = 'No notes written.';
-    reviewEl.classList.add('no-review');
-  }
+  renderModalNotes(id, essay.notes || '');
 
   const linkEl = document.getElementById('modal-link');
   linkEl.href = essay.url;
@@ -1291,8 +1274,32 @@ function openEssayModal(id, fromWishlist = false) {
         fetchBtn.classList.add('hidden');
         renderEssaysSection();
       } else {
-        fetchBtn.textContent = 'No image found';
-        setTimeout(() => { fetchBtn.textContent = 'Fetch image ↓'; fetchBtn.disabled = false; }, 2000);
+        // No image found — offer a manual URL input
+        const wrap = document.createElement('div');
+        wrap.className = 'manual-image-wrap';
+        wrap.innerHTML = `
+          <span class="manual-image-label">No image found. Paste one:</span>
+          <div class="manual-image-row">
+            <input type="url" id="manual-image-url" class="manual-image-input" placeholder="https://…">
+            <button id="manual-image-save" class="modal-edit-save">Save</button>
+          </div>
+        `;
+        fetchBtn.replaceWith(wrap);
+        document.getElementById('manual-image-url').focus();
+        document.getElementById('manual-image-save').addEventListener('click', () => {
+          const imgUrl = document.getElementById('manual-image-url').value.trim();
+          if (!imgUrl) return;
+          essay.coverUrl = imgUrl;
+          updateUserItem(essay.id, { coverUrl: imgUrl });
+          coverWrap.classList.remove('modal-cover-wrap--hidden');
+          coverWrap.style.aspectRatio = '16 / 9';
+          modalCover.src = imgUrl;
+          modalCover.alt = essay.title;
+          modalCover.onload = () => modalCover.classList.add('loaded');
+          modalCover.className = '';
+          wrap.remove();
+          renderEssaysSection();
+        });
       }
     };
   } else {
@@ -1392,6 +1399,7 @@ async function tryGoogleBooks(img) {
 // ─────────────────────────────────────────
 
 let currentModalItem = null; // { id, type, source: 'library'|'want', item }
+let editingItemId    = null; // set when the add modal is being used to edit an existing item
 
 function setModalActions(id, type, source, item) {
   currentModalItem = { id, type, source, item };
@@ -1399,6 +1407,14 @@ function setModalActions(id, type, source, item) {
   const moveLabels = { book: 'Mark as Read →', podcast: 'Mark as Listened →', lecture: 'Mark as Watched →', essay: 'Mark as Read →' };
   moveBtn.textContent = moveLabels[type] || 'Move to Library →';
   moveBtn.classList.toggle('hidden', source !== 'want');
+
+  const editBtn = document.getElementById('modal-edit-btn');
+  if (item._dest !== undefined) {
+    editBtn.classList.remove('hidden');
+    editBtn.onclick = () => { closeModal(); openEditModal(item); };
+  } else {
+    editBtn.classList.add('hidden');
+  }
 }
 
 function deleteCurrentItem() {
@@ -1492,14 +1508,7 @@ function openModal(id) {
   document.getElementById('modal-year').textContent   = `Read in ${book.yearRead}`;
   document.getElementById('modal-stars').innerHTML    = stars(book.rating, true);
 
-  const reviewEl = document.getElementById('modal-review');
-  if (book.review.trim()) {
-    reviewEl.textContent = book.review;
-    reviewEl.classList.remove('no-review');
-  } else {
-    reviewEl.textContent = 'No review written.';
-    reviewEl.classList.add('no-review');
-  }
+  renderModalNotes(id, book.review || '');
 
   const modalCover = document.getElementById('modal-cover');
   modalCover.alt = book.title;
@@ -1536,59 +1545,121 @@ function closeModal() {
   currentModalItem = null;
 }
 
+function openEditModal(item) {
+  editingItemId = item.id;
+  openAddModal(item.type);
+
+  // Pre-fill fields in the next frame (modal must be open first)
+  requestAnimationFrame(() => {
+    document.getElementById('add-dest').value   = item._dest || 'library';
+    document.getElementById('add-title').value  = item.title || '';
+    document.getElementById('add-author').value = item.author || item.show || item.channel || '';
+    document.getElementById('add-notes').value  = item.notes || item.review || '';
+    document.getElementById('add-year').value   = item.yearRead || item.yearListened || item.yearWatched || new Date().getFullYear();
+
+    const url = item.url || item.episodeUrl || (item.youtubeId ? `https://youtube.com/watch?v=${item.youtubeId}` : (item.courseUrl || ''));
+    document.getElementById('add-url').value = url;
+
+    if (item.coverUrl) {
+      document.getElementById('add-cover-url').value = item.coverUrl;
+      showCoverPreview(item.coverUrl);
+    }
+
+    if (item.type === 'book') {
+      document.getElementById('add-genre').value  = item.genre || 'Fiction';
+      const n = item.rating || 3;
+      document.getElementById('add-rating').value = n;
+      document.getElementById('add-stars').querySelectorAll('[data-star]').forEach(b =>
+        b.classList.toggle('active', parseInt(b.dataset.star) <= n)
+      );
+    }
+
+    updateAddFormFields();
+    document.getElementById('add-submit').textContent      = 'Save changes';
+    document.getElementById('add-modal-title').textContent = 'Edit entry';
+  });
+}
+
 function renderTakeaways(itemId) {
-  const listEl  = document.getElementById('takeaway-list');
-  const addBtn  = document.getElementById('takeaway-add-btn');
-  const items   = takeawaysStore[itemId] || [];
+  const container = document.getElementById('modal-takeaways');
+  // Backward compat: old data was stored as string[], now as plain string
+  const raw  = takeawaysStore[itemId];
+  const text = Array.isArray(raw) ? raw.join('\n') : (raw || '');
+  const empty = !text.trim();
 
-  listEl.innerHTML = items.length
-    ? items.map((t, i) => `
-        <li class="takeaway-item">
-          <span class="takeaway-bullet">—</span>
-          <span class="takeaway-text">${escHtml(t)}</span>
-          <button class="takeaway-delete" data-index="${i}" title="Remove" aria-label="Remove takeaway">×</button>
-        </li>`).join('')
-    : '<li class="takeaway-empty">No takeaways yet — click + to add one</li>';
+  container.innerHTML = `
+    <div class="modal-section-header">
+      <span class="modal-section-label">Key Takeaways</span>
+      <button class="modal-inline-edit-btn" id="takeaways-edit-btn" title="Edit takeaways" aria-label="Edit takeaways">✎</button>
+    </div>
+    <div class="modal-section-body${empty ? ' no-content' : ''}">${empty ? 'No takeaways yet.' : escHtml(text)}</div>
+  `;
 
-  listEl.querySelectorAll('.takeaway-delete').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const current = [...(takeawaysStore[itemId] || [])];
-      current.splice(parseInt(btn.dataset.index), 1);
-      if (current.length) takeawaysStore[itemId] = current;
-      else delete takeawaysStore[itemId];
+  document.getElementById('takeaways-edit-btn').addEventListener('click', () => {
+    const current = Array.isArray(takeawaysStore[itemId]) ? takeawaysStore[itemId].join('\n') : (takeawaysStore[itemId] || '');
+    container.querySelector('.modal-section-body').outerHTML = `
+      <textarea id="takeaways-textarea" class="modal-edit-textarea">${escHtml(current)}</textarea>
+      <div class="modal-edit-actions">
+        <button id="takeaways-save" class="modal-edit-save">Save</button>
+        <button id="takeaways-cancel" class="modal-edit-cancel">Cancel</button>
+      </div>
+    `;
+    const ta = document.getElementById('takeaways-textarea');
+    ta.focus();
+    ta.setSelectionRange(ta.value.length, ta.value.length);
+    document.getElementById('takeaways-save').addEventListener('click', () => {
+      const val = ta.value.trim();
+      if (val) takeawaysStore[itemId] = val; else delete takeawaysStore[itemId];
       saveTakeaways();
       renderTakeaways(itemId);
     });
+    document.getElementById('takeaways-cancel').addEventListener('click', () => renderTakeaways(itemId));
   });
+}
 
-  // Clone the add button to remove any previous listener, then re-attach
-  const fresh = addBtn.cloneNode(true);
-  addBtn.replaceWith(fresh);
-  fresh.addEventListener('click', () => {
-    if (listEl.querySelector('.takeaway-item--editing')) return; // one at a time
-    if (listEl.querySelector('.takeaway-empty')) listEl.innerHTML = '';
+function renderModalNotes(itemId, fallback) {
+  const el      = document.getElementById('modal-review');
+  // notesStore overrides item data; allows editing notes on hardcoded items too
+  const stored  = notesStore[String(itemId)];
+  const text    = stored !== undefined ? stored : (fallback || '');
+  const empty   = !text.trim();
 
-    const li = document.createElement('li');
-    li.className = 'takeaway-item takeaway-item--editing';
-    li.innerHTML = `<input class="takeaway-input" type="text" placeholder="Add a takeaway…" maxlength="300">`;
-    listEl.appendChild(li);
-    const input = li.querySelector('.takeaway-input');
-    input.focus();
+  el.className  = 'modal-review';
+  el.innerHTML  = `
+    <div class="modal-section-header">
+      <span class="modal-section-label">Notes</span>
+      <button class="modal-inline-edit-btn" id="notes-edit-btn" title="Edit notes" aria-label="Edit notes">✎</button>
+    </div>
+    <div class="modal-section-body${empty ? ' no-content' : ''}">${empty ? 'No notes written.' : escHtml(text)}</div>
+  `;
 
-    function commit() {
-      const val = input.value.trim();
-      if (val) {
-        if (!takeawaysStore[itemId]) takeawaysStore[itemId] = [];
-        takeawaysStore[itemId].push(val);
-        saveTakeaways();
+  document.getElementById('notes-edit-btn').addEventListener('click', () => {
+    const current = notesStore[String(itemId)] !== undefined ? notesStore[String(itemId)] : (fallback || '');
+    el.querySelector('.modal-section-body').outerHTML = `
+      <textarea id="notes-textarea" class="modal-edit-textarea">${escHtml(current)}</textarea>
+      <div class="modal-edit-actions">
+        <button id="notes-save" class="modal-edit-save">Save</button>
+        <button id="notes-cancel" class="modal-edit-cancel">Cancel</button>
+      </div>
+    `;
+    const ta = document.getElementById('notes-textarea');
+    ta.focus();
+    ta.setSelectionRange(ta.value.length, ta.value.length);
+    document.getElementById('notes-save').addEventListener('click', () => {
+      const val = ta.value.trim();
+      notesStore[String(itemId)] = val;
+      saveNotes();
+      // For user-added items, also persist to the item itself
+      if (currentModalItem?.item?._dest !== undefined) {
+        const field = currentModalItem.type === 'book' ? 'review' : 'notes';
+        updateUserItem(itemId, { [field]: val });
+        const arr = { book: books, essay: essays, podcast: podcasts, lecture: lectures };
+        const found = (arr[currentModalItem.type] || []).find(x => x.id === itemId);
+        if (found) found[field] = val;
       }
-      renderTakeaways(itemId);
-    }
-    input.addEventListener('keydown', e => {
-      if (e.key === 'Enter')  { e.preventDefault(); commit(); }
-      if (e.key === 'Escape') renderTakeaways(itemId);
+      renderModalNotes(itemId, fallback);
     });
-    input.addEventListener('blur', commit);
+    document.getElementById('notes-cancel').addEventListener('click', () => renderModalNotes(itemId, fallback));
   });
 }
 
@@ -1728,6 +1799,36 @@ function saveTakeaways() {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(takeawaysStore),
+    }).catch(() => {});
+  }
+}
+
+// Notes override store — persists edited notes for any item (hardcoded or user-added)
+const NOTES_KEY = 'library_notes';
+let notesStore  = {}; // { [itemId]: string }
+
+async function loadNotes() {
+  if (FIREBASE_DB_URL) {
+    try {
+      const res  = await fetch(`${FIREBASE_DB_URL}/library_notes.json`);
+      const data = await res.json();
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        notesStore = data;
+        localStorage.setItem(NOTES_KEY, JSON.stringify(data));
+        return;
+      }
+    } catch {}
+  }
+  try { notesStore = JSON.parse(localStorage.getItem(NOTES_KEY) || '{}'); } catch {}
+}
+
+function saveNotes() {
+  localStorage.setItem(NOTES_KEY, JSON.stringify(notesStore));
+  if (FIREBASE_DB_URL) {
+    fetch(`${FIREBASE_DB_URL}/library_notes.json`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(notesStore),
     }).catch(() => {});
   }
 }
@@ -2005,6 +2106,10 @@ function closeAddModal() {
   document.getElementById('add-stars').querySelectorAll('[data-star]').forEach(b => b.classList.remove('active'));
   document.getElementById('add-type').value = 'essay';
   updateAddFormFields();
+  // Reset edit mode
+  editingItemId = null;
+  document.getElementById('add-submit').textContent      = 'Save';
+  document.getElementById('add-modal-title').textContent = 'Add to Library';
 }
 
 function handleAddSubmit() {
@@ -2020,6 +2125,46 @@ function handleAddSubmit() {
   const genre    = document.getElementById('add-genre').value || 'Fiction';
 
   if (!title) { document.getElementById('add-title').focus(); return; }
+
+  // ── EDIT MODE ──────────────────────────────────────────────
+  if (editingItemId !== null) {
+    const id  = editingItemId;
+    const all = [...books, ...essays, ...podcasts, ...lectures, ...wishlist];
+    const existing = all.find(x => x.id === id);
+
+    if (existing) {
+      let updates;
+      if (type === 'podcast') {
+        updates = { title, show: author, episodeUrl: url, coverUrl, yearListened: year, notes };
+      } else if (type === 'book') {
+        updates = { title, author, coverUrl, rating, genre, yearRead: year, review: notes };
+      } else if (type === 'lecture') {
+        const ytId = extractYouTubeId(url);
+        updates = { title, channel: author, youtubeId: ytId || '', courseUrl: ytId ? '' : url, yearWatched: year, notes };
+      } else {
+        updates = { title, author, url, coverUrl, yearRead: year, notes };
+      }
+      Object.assign(existing, updates);
+      updateUserItem(id, updates);
+
+      const d = existing._dest;
+      if (d === 'library') {
+        if (type === 'podcast') renderPodcastsSection();
+        else if (type === 'book') { renderCatalogue(); renderGenrePills(); renderYearOptions(); }
+        else if (type === 'lecture') renderLecturesSection();
+        else renderEssaysSection();
+      } else {
+        renderWantSection();
+      }
+      renderStats();
+      renderHomeCards();
+    }
+
+    editingItemId = null;
+    closeAddModal();
+    return;
+  }
+  // ────────────────────────────────────────────────────────────
 
   const id = Date.now();
   let item;
@@ -2233,6 +2378,7 @@ async function initApp() {
   await mergeUserItems();
   await applyDeletedIds();
   await loadTakeaways();
+  await loadNotes();
   renderStats();
   renderHomeCards();
   renderGenrePills();
