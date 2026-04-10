@@ -2326,6 +2326,25 @@ function setupStarRating() {
   });
 }
 
+function setHeroImage(img) {
+  document.getElementById('view-home').style.backgroundImage = `url('${CSS.escape(img)}')`;
+}
+
+function setupHeroPicker() {
+  const saved = localStorage.getItem('hero-img') || 'hero.jpg';
+  setHeroImage(saved);
+
+  document.querySelectorAll('.hero-thumb').forEach(btn => {
+    if (btn.dataset.img === saved) btn.classList.add('active');
+    btn.addEventListener('click', () => {
+      setHeroImage(btn.dataset.img);
+      localStorage.setItem('hero-img', btn.dataset.img);
+      document.querySelectorAll('.hero-thumb').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+}
+
 function setupAddForm() {
   // Populate genre dropdown from GENRE_ORDER
   const genreSelect = document.getElementById('add-genre');
@@ -2488,6 +2507,7 @@ async function initApp() {
   setupEventListeners();
   setupAddForm();
   setupQuickAddModal();
+  setupHeroPicker();
   document.getElementById('add-year').value = new Date().getFullYear();
   handleShareTarget();
 }
