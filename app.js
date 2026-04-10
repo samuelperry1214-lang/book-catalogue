@@ -535,7 +535,8 @@ function renderStats() {
   if (wishlist.length) {
     parts.push(`<span class="stat-sep">·</span><span>${wishlist.length} on list</span>`);
   }
-  document.getElementById('header-stats').innerHTML = parts.join('');
+  const statsEl = document.getElementById('header-stats');
+  if (statsEl) statsEl.innerHTML = parts.join('');
 }
 
 function renderHomeCards() {
