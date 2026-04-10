@@ -19,11 +19,19 @@
 <body>
 
   <header>
+    <div class="header-overlay"></div>
     <div class="container">
-      <div class="header-content">
-        <h1><button id="home-link" class="home-link">My Library</button></h1>
+      <button id="home-link" class="home-link">My Library</button>
+      <div class="header-right">
+        <div id="header-stats"></div>
+        <div class="hero-picker hero-picker--header" aria-label="Choose background image">
+          <button class="hero-thumb" data-img="hero.jpg" aria-label="Background 1"><img src="hero.jpg" alt=""></button>
+          <button class="hero-thumb" data-img="IMG_20211217_130258.jpg" aria-label="Background 2"><img src="IMG_20211217_130258.jpg" alt=""></button>
+          <button class="hero-thumb" data-img="IMG_20220315_114652.jpg" aria-label="Background 3"><img src="IMG_20220315_114652.jpg" alt=""></button>
+          <button class="hero-thumb" data-img="IMG_20220619_213007.jpg" aria-label="Background 4"><img src="IMG_20220619_213007.jpg" alt=""></button>
+          <button class="hero-thumb" data-img="IMG_20220620_224031.jpg" aria-label="Background 5"><img src="IMG_20220620_224031.jpg" alt=""></button>
+        </div>
       </div>
-      <div id="header-stats"></div>
     </div>
   </header>
 

@@ -2327,7 +2327,9 @@ function setupStarRating() {
 }
 
 function setHeroImage(img) {
-  document.getElementById('view-home').style.backgroundImage = `url('${CSS.escape(img)}')`;
+  const url = `url('${CSS.escape(img)}')`;
+  document.getElementById('view-home').style.backgroundImage = url;
+  document.querySelector('header').style.backgroundImage = url;
 }
 
 function setupHeroPicker() {
@@ -2337,10 +2339,13 @@ function setupHeroPicker() {
   document.querySelectorAll('.hero-thumb').forEach(btn => {
     if (btn.dataset.img === saved) btn.classList.add('active');
     btn.addEventListener('click', () => {
-      setHeroImage(btn.dataset.img);
-      localStorage.setItem('hero-img', btn.dataset.img);
-      document.querySelectorAll('.hero-thumb').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+      const img = btn.dataset.img;
+      setHeroImage(img);
+      localStorage.setItem('hero-img', img);
+      // Sync active state across all pickers (home footer + header)
+      document.querySelectorAll('.hero-thumb').forEach(b => {
+        b.classList.toggle('active', b.dataset.img === img);
+      });
     });
   });
 }
