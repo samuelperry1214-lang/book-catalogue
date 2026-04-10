@@ -2223,6 +2223,9 @@ function handleAddSubmit() {
     const existing = all.find(x => x.id === id);
 
     if (existing) {
+      const oldType = existing.type;
+      const d = existing._dest;
+
       let updates;
       if (type === 'podcast') {
         updates = { title, show: author, episodeUrl: url, coverUrl, yearListened: year, notes };
@@ -2235,14 +2238,30 @@ function handleAddSubmit() {
         updates = { title, author, url, coverUrl, yearRead: year, notes };
       }
       Object.assign(existing, updates);
-      updateUserItem(id, updates);
+      existing.type = type; // ensure type field is updated
 
-      const d = existing._dest;
+      // If the type changed, move the item from its old array to the new one
+      if (oldType !== type) {
+        const arrayFor = t => ({ book: books, essay: essays, podcast: podcasts, lecture: lectures, want: wishlist })[t]
+          || (d === 'want' ? wishlist : null);
+        const srcArray = d === 'want' ? wishlist : arrayFor(oldType);
+        const dstArray = d === 'want' ? wishlist : arrayFor(type);
+        if (srcArray && dstArray && srcArray !== dstArray) {
+          const idx = srcArray.indexOf(existing);
+          if (idx !== -1) srcArray.splice(idx, 1);
+          dstArray.push(existing);
+        }
+      }
+
+      updateUserItem(id, { ...updates, type });
+
       if (d === 'library') {
-        if (type === 'podcast') renderPodcastsSection();
-        else if (type === 'book') { renderCatalogue(); renderGenrePills(); renderYearOptions(); }
-        else if (type === 'lecture') renderLecturesSection();
-        else renderEssaysSection();
+        // Re-render both old and new sections in case type changed
+        const sectionsToRender = new Set([oldType, type]);
+        if (sectionsToRender.has('podcast')) renderPodcastsSection();
+        if (sectionsToRender.has('book'))    { renderCatalogue(); renderGenrePills(); renderYearOptions(); }
+        if (sectionsToRender.has('lecture')) renderLecturesSection();
+        if (sectionsToRender.has('essay'))   renderEssaysSection();
       } else {
         renderWantSection();
       }
