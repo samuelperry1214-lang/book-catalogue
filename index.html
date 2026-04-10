@@ -167,7 +167,10 @@
             <img id="add-cover-img" src="" alt="Cover preview">
           </div>
         </div>
-        <input type="hidden" id="add-cover-url">
+        <div class="add-field">
+          <label for="add-cover-url">Cover image URL <span class="add-optional">(optional)</span></label>
+          <input type="url" id="add-cover-url" placeholder="https://…" autocomplete="off">
+        </div>
 
         <div class="add-field">
           <label for="add-author" id="add-author-label">Author</label>
@@ -236,6 +239,13 @@
           <div id="modal-review" class="modal-review"></div>
           <a id="modal-link" class="modal-link hidden" href="#" target="_blank" rel="noopener noreferrer"></a>
           <button id="modal-fetch-image" class="modal-fetch-image hidden">Fetch image ↓</button>
+          <div id="modal-manual-image" class="manual-image-wrap hidden">
+            <span class="manual-image-label">No image found. Paste one:</span>
+            <div class="manual-image-row">
+              <input type="url" id="manual-image-url" class="manual-image-input" placeholder="https://…">
+              <button id="manual-image-save" class="modal-edit-save">Save</button>
+            </div>
+          </div>
           <div class="modal-actions">
             <button id="modal-move-btn" class="modal-action-btn modal-action-btn--move hidden">Mark as Read →</button>
             <button id="modal-edit-btn" class="modal-action-btn modal-action-btn--edit hidden">Edit listing</button>

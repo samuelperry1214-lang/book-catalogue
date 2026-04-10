@@ -1018,16 +1018,67 @@ function openPodcastModal(id, fromWishlist = false) {
   }
 
   const modalCover = document.getElementById('modal-cover');
-  document.querySelector('.modal-cover-wrap').style.aspectRatio = '1 / 1';
+  const coverWrap  = document.querySelector('.modal-cover-wrap');
+  coverWrap.style.aspectRatio = '1 / 1';
   if (podcast.coverUrl) {
+    coverWrap.classList.remove('modal-cover-wrap--hidden');
     modalCover.src = podcast.coverUrl;
     modalCover.alt = podcast.show;
     modalCover.onload  = () => modalCover.classList.add('loaded');
     modalCover.className = '';
   } else {
+    coverWrap.classList.add('modal-cover-wrap--hidden');
     modalCover.src = '';
     modalCover.alt = '';
     modalCover.className = '';
+  }
+
+  // Show "Fetch image" button when there's a URL but no cover yet
+  const fetchBtn = document.getElementById('modal-fetch-image');
+  if (podcast.episodeUrl && !podcast.coverUrl) {
+    fetchBtn.textContent = 'Fetch image ↓';
+    fetchBtn.disabled    = false;
+    fetchBtn.classList.remove('hidden');
+    fetchBtn.onclick = async () => {
+      fetchBtn.textContent = 'Fetching…';
+      fetchBtn.disabled    = true;
+      const meta = await fetchUrlMetadata(podcast.episodeUrl);
+      if (meta.image) {
+        podcast.coverUrl = meta.image;
+        updateUserItem(podcast.id, { coverUrl: meta.image });
+        coverWrap.classList.remove('modal-cover-wrap--hidden');
+        coverWrap.style.aspectRatio = '1 / 1';
+        modalCover.src     = meta.image;
+        modalCover.alt     = podcast.show;
+        modalCover.onload  = () => modalCover.classList.add('loaded');
+        modalCover.className = '';
+        fetchBtn.classList.add('hidden');
+        renderPodcastsSection();
+      } else {
+        fetchBtn.classList.add('hidden');
+        const manualWrap  = document.getElementById('modal-manual-image');
+        const manualInput = document.getElementById('manual-image-url');
+        manualWrap.classList.remove('hidden');
+        manualInput.focus();
+        document.getElementById('manual-image-save').onclick = () => {
+          const imgUrl = manualInput.value.trim();
+          if (!imgUrl) return;
+          podcast.coverUrl = imgUrl;
+          updateUserItem(podcast.id, { coverUrl: imgUrl });
+          coverWrap.classList.remove('modal-cover-wrap--hidden');
+          coverWrap.style.aspectRatio = '1 / 1';
+          modalCover.src = imgUrl;
+          modalCover.alt = podcast.show;
+          modalCover.onload = () => modalCover.classList.add('loaded');
+          modalCover.className = '';
+          manualWrap.classList.add('hidden');
+          manualInput.value = '';
+          renderPodcastsSection();
+        };
+      }
+    };
+  } else {
+    fetchBtn.classList.add('hidden');
   }
 
   renderTakeaways(id);
@@ -1274,20 +1325,14 @@ function openEssayModal(id, fromWishlist = false) {
         fetchBtn.classList.add('hidden');
         renderEssaysSection();
       } else {
-        // No image found — offer a manual URL input
-        const wrap = document.createElement('div');
-        wrap.className = 'manual-image-wrap';
-        wrap.innerHTML = `
-          <span class="manual-image-label">No image found. Paste one:</span>
-          <div class="manual-image-row">
-            <input type="url" id="manual-image-url" class="manual-image-input" placeholder="https://…">
-            <button id="manual-image-save" class="modal-edit-save">Save</button>
-          </div>
-        `;
-        fetchBtn.replaceWith(wrap);
-        document.getElementById('manual-image-url').focus();
-        document.getElementById('manual-image-save').addEventListener('click', () => {
-          const imgUrl = document.getElementById('manual-image-url').value.trim();
+        // No image found — show persistent manual URL panel
+        fetchBtn.classList.add('hidden');
+        const manualWrap = document.getElementById('modal-manual-image');
+        const manualInput = document.getElementById('manual-image-url');
+        manualWrap.classList.remove('hidden');
+        manualInput.focus();
+        document.getElementById('manual-image-save').onclick = () => {
+          const imgUrl = manualInput.value.trim();
           if (!imgUrl) return;
           essay.coverUrl = imgUrl;
           updateUserItem(essay.id, { coverUrl: imgUrl });
@@ -1297,9 +1342,10 @@ function openEssayModal(id, fromWishlist = false) {
           modalCover.alt = essay.title;
           modalCover.onload = () => modalCover.classList.add('loaded');
           modalCover.className = '';
-          wrap.remove();
+          manualWrap.classList.add('hidden');
+          manualInput.value = '';
           renderEssaysSection();
-        });
+        };
       }
     };
   } else {
@@ -1538,6 +1584,8 @@ function closeModal() {
   modal.querySelector('.modal-content').className = 'modal-content';
   document.getElementById('modal-link').classList.add('hidden');
   document.getElementById('modal-fetch-image').classList.add('hidden');
+  document.getElementById('modal-manual-image').classList.add('hidden');
+  document.getElementById('manual-image-url').value = '';
   const coverWrap = document.querySelector('.modal-cover-wrap');
   coverWrap.style.aspectRatio = '';
   coverWrap.classList.remove('modal-cover-wrap--hidden');
@@ -2279,6 +2327,9 @@ function setupAddForm() {
   });
 
   document.getElementById('add-type').addEventListener('change', updateAddFormFields);
+  document.getElementById('add-cover-url').addEventListener('input', e => {
+    showCoverPreview(e.target.value.trim());
+  });
   document.getElementById('add-submit').addEventListener('click', handleAddSubmit);
 
   document.addEventListener('keydown', e => {

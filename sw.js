@@ -1,4 +1,4 @@
-const CACHE = 'library-v7';
+const CACHE = 'library-v8';
 const ASSETS = ['/', '/index.html', '/app.js', '/style.css', '/manifest.json', '/icon.svg'];
 
 self.addEventListener('install', e => {
