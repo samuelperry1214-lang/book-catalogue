@@ -1033,6 +1033,7 @@ function openPodcastModal(id, fromWishlist = false) {
     modalCover.className = '';
   }
 
+  renderTakeaways(id);
   modal.classList.remove('hidden');
   document.body.classList.add('modal-open');
 }
@@ -1212,6 +1213,7 @@ function openLectureModal(id, fromWishlist = false) {
     modalCover.className = '';
   }
 
+  renderTakeaways(id);
   modal.classList.remove('hidden');
   document.body.classList.add('modal-open');
 }
@@ -1249,12 +1251,55 @@ function openEssayModal(id, fromWishlist = false) {
   linkEl.textContent = 'Read Essay ↗';
   linkEl.classList.remove('hidden');
 
+  // Cover image: show at 16:9 when available, otherwise hide the cover pane
   const modalCover = document.getElementById('modal-cover');
-  modalCover.src = '';
-  modalCover.alt = '';
-  modalCover.className = '';
-  document.querySelector('.modal-cover-wrap').style.aspectRatio = '';
+  const coverWrap  = document.querySelector('.modal-cover-wrap');
+  if (essay.coverUrl) {
+    coverWrap.classList.remove('modal-cover-wrap--hidden');
+    coverWrap.style.aspectRatio = '16 / 9';
+    modalCover.src     = essay.coverUrl;
+    modalCover.alt     = essay.title;
+    modalCover.onload  = () => modalCover.classList.add('loaded');
+    modalCover.className = '';
+  } else {
+    coverWrap.classList.add('modal-cover-wrap--hidden');
+    modalCover.src     = '';
+    modalCover.alt     = '';
+    modalCover.className = '';
+    coverWrap.style.aspectRatio = '';
+  }
 
+  // Show "Fetch image" button when there's a URL but no cover yet
+  const fetchBtn = document.getElementById('modal-fetch-image');
+  if (essay.url && !essay.coverUrl) {
+    fetchBtn.textContent = 'Fetch image ↓';
+    fetchBtn.disabled    = false;
+    fetchBtn.classList.remove('hidden');
+    fetchBtn.onclick = async () => {
+      fetchBtn.textContent = 'Fetching…';
+      fetchBtn.disabled    = true;
+      const meta = await fetchUrlMetadata(essay.url);
+      if (meta.image) {
+        essay.coverUrl = meta.image;
+        updateUserItem(essay.id, { coverUrl: meta.image });
+        coverWrap.classList.remove('modal-cover-wrap--hidden');
+        coverWrap.style.aspectRatio = '16 / 9';
+        modalCover.src     = meta.image;
+        modalCover.alt     = essay.title;
+        modalCover.onload  = () => modalCover.classList.add('loaded');
+        modalCover.className = '';
+        fetchBtn.classList.add('hidden');
+        renderEssaysSection();
+      } else {
+        fetchBtn.textContent = 'No image found';
+        setTimeout(() => { fetchBtn.textContent = 'Fetch image ↓'; fetchBtn.disabled = false; }, 2000);
+      }
+    };
+  } else {
+    fetchBtn.classList.add('hidden');
+  }
+
+  renderTakeaways(id);
   modal.classList.remove('hidden');
   document.body.classList.add('modal-open');
 }
@@ -1473,6 +1518,7 @@ function openModal(id) {
     tryGoogleBooks(modalCover);
   }
 
+  renderTakeaways(id);
   document.getElementById('modal').classList.remove('hidden');
   document.body.classList.add('modal-open');
 }
@@ -1482,9 +1528,68 @@ function closeModal() {
   modal.classList.add('hidden');
   modal.querySelector('.modal-content').className = 'modal-content';
   document.getElementById('modal-link').classList.add('hidden');
-  document.querySelector('.modal-cover-wrap').style.aspectRatio = '';
+  document.getElementById('modal-fetch-image').classList.add('hidden');
+  const coverWrap = document.querySelector('.modal-cover-wrap');
+  coverWrap.style.aspectRatio = '';
+  coverWrap.classList.remove('modal-cover-wrap--hidden');
   document.body.classList.remove('modal-open');
   currentModalItem = null;
+}
+
+function renderTakeaways(itemId) {
+  const listEl  = document.getElementById('takeaway-list');
+  const addBtn  = document.getElementById('takeaway-add-btn');
+  const items   = takeawaysStore[itemId] || [];
+
+  listEl.innerHTML = items.length
+    ? items.map((t, i) => `
+        <li class="takeaway-item">
+          <span class="takeaway-bullet">—</span>
+          <span class="takeaway-text">${escHtml(t)}</span>
+          <button class="takeaway-delete" data-index="${i}" title="Remove" aria-label="Remove takeaway">×</button>
+        </li>`).join('')
+    : '<li class="takeaway-empty">No takeaways yet — click + to add one</li>';
+
+  listEl.querySelectorAll('.takeaway-delete').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const current = [...(takeawaysStore[itemId] || [])];
+      current.splice(parseInt(btn.dataset.index), 1);
+      if (current.length) takeawaysStore[itemId] = current;
+      else delete takeawaysStore[itemId];
+      saveTakeaways();
+      renderTakeaways(itemId);
+    });
+  });
+
+  // Clone the add button to remove any previous listener, then re-attach
+  const fresh = addBtn.cloneNode(true);
+  addBtn.replaceWith(fresh);
+  fresh.addEventListener('click', () => {
+    if (listEl.querySelector('.takeaway-item--editing')) return; // one at a time
+    if (listEl.querySelector('.takeaway-empty')) listEl.innerHTML = '';
+
+    const li = document.createElement('li');
+    li.className = 'takeaway-item takeaway-item--editing';
+    li.innerHTML = `<input class="takeaway-input" type="text" placeholder="Add a takeaway…" maxlength="300">`;
+    listEl.appendChild(li);
+    const input = li.querySelector('.takeaway-input');
+    input.focus();
+
+    function commit() {
+      const val = input.value.trim();
+      if (val) {
+        if (!takeawaysStore[itemId]) takeawaysStore[itemId] = [];
+        takeawaysStore[itemId].push(val);
+        saveTakeaways();
+      }
+      renderTakeaways(itemId);
+    }
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter')  { e.preventDefault(); commit(); }
+      if (e.key === 'Escape') renderTakeaways(itemId);
+    });
+    input.addEventListener('blur', commit);
+  });
 }
 
 // ─────────────────────────────────────────
@@ -1597,7 +1702,35 @@ function setupEventListeners() {
 //
 const FIREBASE_DB_URL = 'https://library-cf4ea-default-rtdb.europe-west1.firebasedatabase.app';
 
-const STORAGE_KEY = 'library_user_items';
+const STORAGE_KEY   = 'library_user_items';
+const TAKEAWAYS_KEY = 'library_takeaways';
+let takeawaysStore  = {}; // { [itemId]: string[] }
+
+async function loadTakeaways() {
+  if (FIREBASE_DB_URL) {
+    try {
+      const res  = await fetch(`${FIREBASE_DB_URL}/library_takeaways.json`);
+      const data = await res.json();
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        takeawaysStore = data;
+        localStorage.setItem(TAKEAWAYS_KEY, JSON.stringify(data));
+        return;
+      }
+    } catch {}
+  }
+  try { takeawaysStore = JSON.parse(localStorage.getItem(TAKEAWAYS_KEY) || '{}'); } catch {}
+}
+
+function saveTakeaways() {
+  localStorage.setItem(TAKEAWAYS_KEY, JSON.stringify(takeawaysStore));
+  if (FIREBASE_DB_URL) {
+    fetch(`${FIREBASE_DB_URL}/library_takeaways.json`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(takeawaysStore),
+    }).catch(() => {});
+  }
+}
 
 async function loadUserItems() {
   if (FIREBASE_DB_URL) {
@@ -1656,6 +1789,17 @@ function removeFromUserItems(id) {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
   })();
   saveUserItems(saved.filter(i => i.id !== id));
+}
+
+function updateUserItem(id, updates) {
+  const saved = (() => {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
+  })();
+  const idx = saved.findIndex(i => i.id === id);
+  if (idx !== -1) {
+    Object.assign(saved[idx], updates);
+    saveUserItems(saved);
+  }
 }
 
 // ─── Deleted IDs (for hiding hardcoded items) ───
@@ -1753,7 +1897,21 @@ function titleFromUrl(url) {
 }
 
 async function fetchUrlMetadata(url) {
-  // Try two proxies in sequence — some sites (e.g. New Yorker) block one but not the other
+  // Try Microlink first — headless browser approach, handles paywalled/JS-rendered sites
+  try {
+    const r = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}`);
+    if (r.ok) {
+      const d = await r.json();
+      if (d.status === 'success' && d.data) {
+        const title  = d.data.title  || '';
+        const image  = d.data.image?.url || '';
+        const author = d.data.author || '';
+        if (title || image) return { title, image, author };
+      }
+    }
+  } catch {}
+
+  // Fall back to CORS proxies — some sites (e.g. New Yorker) block one but not the other
   const fetchers = [
     async () => {
       const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
@@ -2074,6 +2232,7 @@ if ('serviceWorker' in navigator) {
 async function initApp() {
   await mergeUserItems();
   await applyDeletedIds();
+  await loadTakeaways();
   renderStats();
   renderHomeCards();
   renderGenrePills();
