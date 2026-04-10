@@ -883,6 +883,7 @@ function renderWishCard(item) {
             <span class="essay-placeholder-divider"></span>
             <span class="essay-placeholder-mark">❝</span>
           </div>
+          ${item.coverUrl ? `<img class="cover-img" src="${escHtml(item.coverUrl)}" alt="${escHtml(item.title)}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'">` : ''}
           ${substack ? `<div class="source-badge source-badge--substack" title="Substack">S</div>` : ''}
           <div class="wish-badge" title="Want to read">🔖</div>
         </div>
