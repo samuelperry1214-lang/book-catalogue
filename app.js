@@ -889,6 +889,7 @@ function renderWishCard(item) {
           <div class="wish-badge" title="Want to read">🔖</div>
         </div>
         <div class="card-info">
+          ${item.publishedYear ? `<div class="card-meta"><span class="card-published">pub. ${item.publishedYear}</span></div>` : ''}
           <h3 class="card-title">${escHtml(item.title)}</h3>
           <p class="card-author">${escHtml(item.author || '')}</p>
         </div>
@@ -1221,6 +1222,7 @@ function renderEssayCard(essay) {
       <div class="card-info">
         <div class="card-meta">
           <span class="card-year">${essay.yearRead}</span>
+          ${essay.publishedYear ? `<span class="card-published">pub. ${essay.publishedYear}</span>` : ''}
         </div>
         <h3 class="card-title">${escHtml(essay.title)}</h3>
         <p class="card-author">${escHtml(essay.author)}</p>
@@ -1640,6 +1642,10 @@ function openEditModal(item) {
       document.getElementById('add-stars').querySelectorAll('[data-star]').forEach(b =>
         b.classList.toggle('active', parseInt(b.dataset.star) <= n)
       );
+    }
+
+    if (item.type === 'essay') {
+      document.getElementById('add-published-year').value = item.publishedYear || '';
     }
 
     updateAddFormFields();
@@ -2094,6 +2100,12 @@ function titleFromUrl(url) {
   }
 }
 
+function yearFromDateString(str) {
+  if (!str) return '';
+  const m = str.match(/\b(19|20)\d{2}\b/);
+  return m ? m[0] : '';
+}
+
 async function fetchUrlMetadata(url) {
   // Try Microlink first — headless browser approach, handles paywalled/JS-rendered sites
   try {
@@ -2101,10 +2113,11 @@ async function fetchUrlMetadata(url) {
     if (r.ok) {
       const d = await r.json();
       if (d.status === 'success' && d.data) {
-        const title  = d.data.title  || '';
-        const image  = d.data.image?.url || '';
-        const author = d.data.author || '';
-        if (title || image) return { title, image, author };
+        const title         = d.data.title  || '';
+        const image         = d.data.image?.url || '';
+        const author        = d.data.author || '';
+        const publishedYear = yearFromDateString(d.data.date || d.data.published_time || '');
+        if (title || image) return { title, image, author, publishedYear };
       }
     }
   } catch {}
@@ -2139,8 +2152,14 @@ async function fetchUrlMetadata(url) {
                      contents.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.replace(/\s+/g, ' ').trim() || '';
       const image  = getMeta('property', 'og:image') || getMeta('name', 'twitter:image');
       const author = getMeta('property', 'og:article:author') || getMeta('name', 'author');
+      const publishedYear = yearFromDateString(
+        getMeta('property', 'article:published_time') ||
+        getMeta('property', 'og:article:published_time') ||
+        getMeta('name', 'date') ||
+        getMeta('itemprop', 'datePublished') || ''
+      );
 
-      if (title || image) return { title, image, author };
+      if (title || image) return { title, image, author, publishedYear };
     } catch { /* try next proxy */ }
   }
   return {};
@@ -2180,6 +2199,8 @@ function updateAddFormFields() {
   document.getElementById('add-author-label').textContent = labels[type] || 'Author';
   document.getElementById('add-author').placeholder = placeholders[type] || 'Author…';
   document.getElementById('add-book-fields').classList.toggle('hidden', type !== 'book');
+  // Published year only relevant for essays
+  document.getElementById('add-published-year-field').classList.toggle('hidden', type !== 'essay');
 }
 
 function openAddModal(defaultType) {
@@ -2198,6 +2219,7 @@ function closeAddModal() {
     document.getElementById(id).value = '';
   });
   document.getElementById('add-year').value = new Date().getFullYear();
+  document.getElementById('add-published-year').value = '';
   document.getElementById('add-cover-preview').classList.add('hidden');
   document.getElementById('add-rating').value = 3;
   document.getElementById('add-stars').querySelectorAll('[data-star]').forEach(b => b.classList.remove('active'));
@@ -2212,14 +2234,15 @@ function closeAddModal() {
 function handleAddSubmit() {
   const url      = document.getElementById('add-url').value.trim();
   const type     = document.getElementById('add-type').value;
-  const dest     = document.getElementById('add-dest').value;
-  const title    = document.getElementById('add-title').value.trim();
-  const author   = document.getElementById('add-author').value.trim();
-  const year     = parseInt(document.getElementById('add-year').value) || new Date().getFullYear();
-  const notes    = document.getElementById('add-notes').value.trim();
-  const coverUrl = document.getElementById('add-cover-url').value.trim();
-  const rating   = parseInt(document.getElementById('add-rating').value) || 3;
-  const genre    = document.getElementById('add-genre').value || 'Fiction';
+  const dest          = document.getElementById('add-dest').value;
+  const title         = document.getElementById('add-title').value.trim();
+  const author        = document.getElementById('add-author').value.trim();
+  const year          = parseInt(document.getElementById('add-year').value) || new Date().getFullYear();
+  const notes         = document.getElementById('add-notes').value.trim();
+  const coverUrl      = document.getElementById('add-cover-url').value.trim();
+  const rating        = parseInt(document.getElementById('add-rating').value) || 3;
+  const genre         = document.getElementById('add-genre').value || 'Fiction';
+  const publishedYear = parseInt(document.getElementById('add-published-year').value) || '';
 
   if (!title) { document.getElementById('add-title').focus(); return; }
 
@@ -2242,7 +2265,7 @@ function handleAddSubmit() {
         const ytId = extractYouTubeId(url);
         updates = { title, channel: author, youtubeId: ytId || '', courseUrl: ytId ? '' : url, yearWatched: year, notes };
       } else {
-        updates = { title, author, url, coverUrl, yearRead: year, notes };
+        updates = { title, author, url, coverUrl, yearRead: year, publishedYear, notes };
       }
       Object.assign(existing, updates);
       existing.type = type; // ensure type field is updated
@@ -2293,7 +2316,7 @@ function handleAddSubmit() {
     const youtubeId = extractYouTubeId(url);
     item = { id, type: 'lecture', _dest: dest, title, channel: author, youtubeId: youtubeId || '', courseUrl: youtubeId ? '' : url, yearWatched: year, notes };
   } else {
-    item = { id, type: 'essay', _dest: dest, title, author, url, coverUrl, yearRead: year, notes };
+    item = { id, type: 'essay', _dest: dest, title, author, url, coverUrl, yearRead: year, publishedYear, notes };
   }
 
   addUserItem(item);
@@ -2422,6 +2445,8 @@ function setupAddForm() {
         const authorEl = document.getElementById('add-author');
         if (!titleEl.value.trim())  titleEl.value  = meta.title || titleFromUrl(url);
         if (meta.author && !authorEl.value.trim()) authorEl.value = meta.author;
+        if (meta.publishedYear && !document.getElementById('add-published-year').value)
+          document.getElementById('add-published-year').value = meta.publishedYear;
         if (meta.image) {
           document.getElementById('add-cover-url').value = meta.image;
           showCoverPreview(meta.image);

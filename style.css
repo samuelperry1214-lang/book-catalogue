@@ -389,6 +389,13 @@ input[type="search"]::placeholder { color: rgba(255, 255, 255, 0.38); }
   letter-spacing: 0.04em;
 }
 
+.card-published {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.38);
+  font-style: italic;
+  font-variant-numeric: tabular-nums;
+}
+
 .card-title {
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-size: 0.92rem;
