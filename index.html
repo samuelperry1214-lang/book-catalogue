@@ -47,9 +47,7 @@
 
       <nav class="home-nav" id="home-nav" aria-label="Library sections">
         <div class="home-card" id="nav-library" role="button" tabindex="0" aria-label="Open Library">
-          <span class="home-card-eyebrow">Explore</span>
           <span class="home-card-title">Library</span>
-          <span class="home-card-sub">Books · Lectures · Podcasts · Essays</span>
           <span id="home-count-library" class="home-card-count"></span>
           <div class="home-card-sections" role="group" aria-label="Library sections">
             <button class="home-card-section-btn" data-view="library" data-tab="books">Books</button>
@@ -59,9 +57,7 @@
           </div>
         </div>
         <div class="home-card" id="nav-want" role="button" tabindex="0" aria-label="Open Reading List">
-          <span class="home-card-eyebrow">Coming up</span>
           <span class="home-card-title">Reading List</span>
-          <span class="home-card-sub">Want to Read &amp; Listen</span>
           <span id="home-count-want" class="home-card-count"></span>
           <div class="home-card-sections" role="group" aria-label="Reading list sections">
             <button class="home-card-section-btn" data-view="want" data-tab="books">Books</button>
@@ -72,13 +68,13 @@
         </div>
       </nav>
 
+    </div>
+
+    <footer class="home-footer">
       <div class="home-setup-row">
         <button id="setup-btn" class="setup-link">⚡ Quick-add setup</button>
       </div>
-
-    </div>
-
-    <footer class="home-footer" aria-hidden="true"></footer>
+    </footer>
 
   </div>
 
@@ -141,7 +137,22 @@
         <button class="add-item-btn" id="add-item-btn-want">+ Add</button>
       </div>
     </div>
-    <main id="want-section" class="container" aria-label="Reading list"></main>
+    <nav class="filters" aria-label="Filter reading list">
+      <div class="container">
+        <div class="section-tabs-row">
+          <div class="section-tabs" id="want-tabs" role="tablist" aria-label="Reading list sections">
+            <button class="section-tab active" data-want-section="books" role="tab" aria-selected="true">Books</button>
+            <button class="section-tab" data-want-section="lectures" role="tab" aria-selected="false">Lectures</button>
+            <button class="section-tab" data-want-section="podcasts" role="tab" aria-selected="false">Podcasts</button>
+            <button class="section-tab" data-want-section="essays" role="tab" aria-selected="false">Essays</button>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <main id="want-books"    class="container section-panel"        aria-label="Books to read"></main>
+    <main id="want-lectures" class="container section-panel hidden" aria-label="Lectures to watch"></main>
+    <main id="want-podcasts" class="container section-panel hidden" aria-label="Podcasts to listen"></main>
+    <main id="want-essays"   class="container section-panel hidden" aria-label="Essays to read"></main>
   </div>
 
   <!-- ─── ADD ITEM MODAL ─── -->

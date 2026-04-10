@@ -727,17 +727,30 @@ function runHomeSearch(query) {
 }
 
 function switchLibraryTab(section) {
-  document.querySelectorAll('.section-tab').forEach(t => {
+  document.querySelectorAll('#view-library .section-tab').forEach(t => {
     t.classList.remove('active');
     t.setAttribute('aria-selected', 'false');
   });
-  const tab = document.querySelector(`.section-tab[data-section="${section}"]`);
+  const tab = document.querySelector(`#view-library .section-tab[data-section="${section}"]`);
   if (tab) { tab.classList.add('active'); tab.setAttribute('aria-selected', 'true'); }
   document.getElementById('catalogue').classList.toggle('hidden', section !== 'books');
   document.getElementById('book-filters').style.display = section === 'books' ? '' : 'none';
   document.getElementById('lectures-section').classList.toggle('hidden', section !== 'lectures');
   document.getElementById('podcasts-section').classList.toggle('hidden', section !== 'podcasts');
   document.getElementById('essays-section').classList.toggle('hidden', section !== 'essays');
+  window.scrollTo(0, 0);
+}
+
+function switchWantTab(section) {
+  document.querySelectorAll('#want-tabs .section-tab').forEach(t => {
+    t.classList.remove('active');
+    t.setAttribute('aria-selected', 'false');
+  });
+  const tab = document.querySelector(`#want-tabs .section-tab[data-want-section="${section}"]`);
+  if (tab) { tab.classList.add('active'); tab.setAttribute('aria-selected', 'true'); }
+  ['books', 'lectures', 'podcasts', 'essays'].forEach(s => {
+    document.getElementById(`want-${s}`).classList.toggle('hidden', s !== section);
+  });
   window.scrollTo(0, 0);
 }
 
@@ -762,40 +775,37 @@ function handleSearchResultClick(type, section, id) {
 // ─────────────────────────────────────────
 
 function renderWantSection() {
-  const el = document.getElementById('want-section');
+  const sections = [
+    { key: 'books',    type: 'book',    label: 'Books',    grid: 'book-grid' },
+    { key: 'lectures', type: 'lecture', label: 'Lectures', grid: 'item-grid' },
+    { key: 'podcasts', type: 'podcast', label: 'Podcasts', grid: 'item-grid' },
+    { key: 'essays',   type: 'essay',   label: 'Essays',   grid: 'item-grid' },
+  ];
 
-  if (!wishlist.length) {
-    el.innerHTML = `<div class="empty-section"><strong>Your reading list is empty</strong>Add items to the <code>wishlist</code> array in app.js</div>`;
-    return;
-  }
+  sections.forEach(({ key, type, label, grid }) => {
+    const el = document.getElementById(`want-${key}`);
+    const items = wishlist.filter(w => w.type === type);
 
-  const byType = [
-    { label: 'Books',    items: wishlist.filter(w => w.type === 'book') },
-    { label: 'Lectures', items: wishlist.filter(w => w.type === 'lecture') },
-    { label: 'Podcasts', items: wishlist.filter(w => w.type === 'podcast') },
-    { label: 'Essays',   items: wishlist.filter(w => w.type === 'essay') },
-  ].filter(g => g.items.length > 0);
+    if (!items.length) {
+      el.innerHTML = `<div class="empty-section" style="padding-top:3rem"><strong>No ${label.toLowerCase()} in your reading list yet</strong></div>`;
+      return;
+    }
 
-  el.innerHTML = byType.map(group => `
-    <section class="want-type-section">
-      <h2 class="genre-title">
-        <span class="genre-label">${group.label}</span>
-        <span class="genre-count">${group.items.length}</span>
-      </h2>
-      <div class="${group.label === 'Books' ? 'book-grid' : 'item-grid'}">
-        ${group.items.map(item => renderWishCard(item)).join('')}
+    el.innerHTML = `
+      <div style="padding-top:3rem;padding-bottom:5rem">
+        <div class="${grid}">
+          ${items.map(item => renderWishCard(item)).join('')}
+        </div>
+        <div class="shelf-bar"></div>
       </div>
-      <div class="shelf-bar"></div>
-    </section>
-  `).join('');
+    `;
 
-  // Load covers for wishlist book cards
-  el.querySelectorAll('.cover-img[data-coverurl]').forEach(img => loadCover(img));
-
-  el.querySelectorAll('.item-card, .book-card').forEach(card => {
-    card.addEventListener('click', () => openWishModal(card.dataset.type, parseInt(card.dataset.id)));
-    card.addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' ') openWishModal(card.dataset.type, parseInt(card.dataset.id));
+    el.querySelectorAll('.cover-img[data-coverurl]').forEach(img => loadCover(img));
+    el.querySelectorAll('.item-card, .book-card').forEach(card => {
+      card.addEventListener('click', () => openWishModal(card.dataset.type, parseInt(card.dataset.id)));
+      card.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') openWishModal(card.dataset.type, parseInt(card.dataset.id));
+      });
     });
   });
 }
@@ -1775,10 +1785,17 @@ function setupEventListeners() {
   });
 
   // Library section tabs
-  document.querySelector('.section-tabs').addEventListener('click', e => {
+  document.querySelector('#view-library .section-tabs').addEventListener('click', e => {
     const tab = e.target.closest('.section-tab');
     if (!tab) return;
     switchLibraryTab(tab.dataset.section);
+  });
+
+  // Reading list section tabs
+  document.getElementById('want-tabs').addEventListener('click', e => {
+    const tab = e.target.closest('.section-tab');
+    if (!tab) return;
+    switchWantTab(tab.dataset.wantSection);
   });
 
   // Home nav cards — clicking the card goes to the view; section buttons go straight to the tab
@@ -1797,6 +1814,7 @@ function setupEventListeners() {
     if (sectionBtn) {
       e.stopPropagation();
       showView(sectionBtn.dataset.view);
+      if (sectionBtn.dataset.tab) switchWantTab(sectionBtn.dataset.tab);
     } else {
       showView('want');
     }
