@@ -18,22 +18,8 @@
 </head>
 <body>
 
-  <header>
-    <div class="header-overlay"></div>
-    <div class="container">
-      <button id="home-link" class="home-link">My Library</button>
-      <div class="header-right">
-        <div id="header-stats"></div>
-        <div class="hero-picker hero-picker--header" aria-label="Choose background image">
-          <button class="hero-thumb" data-img="hero.jpg" aria-label="Background 1"><img src="hero.jpg" alt=""></button>
-          <button class="hero-thumb" data-img="IMG_20211217_130258.jpg" aria-label="Background 2"><img src="IMG_20211217_130258.jpg" alt=""></button>
-          <button class="hero-thumb" data-img="IMG_20220315_114652.jpg" aria-label="Background 3"><img src="IMG_20220315_114652.jpg" alt=""></button>
-          <button class="hero-thumb" data-img="IMG_20220619_213007.jpg" aria-label="Background 4"><img src="IMG_20220619_213007.jpg" alt=""></button>
-          <button class="hero-thumb" data-img="IMG_20220620_224031.jpg" aria-label="Background 5"><img src="IMG_20220620_224031.jpg" alt=""></button>
-        </div>
-      </div>
-    </div>
-  </header>
+  <!-- Floating home button — shown on all inner views, hidden on home -->
+  <button id="home-back-btn" class="home-back-btn" aria-label="Back to home">← Home</button>
 
   <!-- ─── HOME VIEW ─── -->
   <div id="view-home" class="view">
@@ -96,12 +82,6 @@
   <!-- ─── LIBRARY VIEW ─── -->
   <div id="view-library" class="view hidden">
 
-    <div class="view-back-bar">
-      <div class="container">
-        <button class="back-btn" data-target="home">← Home</button>
-      </div>
-    </div>
-
     <nav class="filters" aria-label="Filter books">
       <div class="container">
         <div class="section-tabs-row">
@@ -111,7 +91,16 @@
             <button class="section-tab" data-section="podcasts" role="tab" aria-selected="false">Podcasts</button>
             <button class="section-tab" data-section="essays" role="tab" aria-selected="false">Essays</button>
           </div>
-          <button id="add-item-btn" class="add-item-btn" aria-label="Add podcast or essay">+ Add</button>
+          <div class="filters-right">
+            <div class="hero-picker hero-picker--header" aria-label="Choose background image">
+              <button class="hero-thumb" data-img="hero.jpg" aria-label="Background 1"><img src="hero.jpg" alt=""></button>
+              <button class="hero-thumb" data-img="IMG_20211217_130258.jpg" aria-label="Background 2"><img src="IMG_20211217_130258.jpg" alt=""></button>
+              <button class="hero-thumb" data-img="IMG_20220315_114652.jpg" aria-label="Background 3"><img src="IMG_20220315_114652.jpg" alt=""></button>
+              <button class="hero-thumb" data-img="IMG_20220619_213007.jpg" aria-label="Background 4"><img src="IMG_20220619_213007.jpg" alt=""></button>
+              <button class="hero-thumb" data-img="IMG_20220620_224031.jpg" aria-label="Background 5"><img src="IMG_20220620_224031.jpg" alt=""></button>
+            </div>
+            <button id="add-item-btn" class="add-item-btn" aria-label="Add podcast or essay">+ Add</button>
+          </div>
         </div>
         <div class="filters-row" id="book-filters">
           <div id="genre-pills" role="group" aria-label="Filter by genre"></div>
@@ -146,12 +135,6 @@
 
   <!-- ─── WANT TO READ/LISTEN VIEW ─── -->
   <div id="view-want" class="view hidden">
-    <div class="view-back-bar">
-      <div class="container view-back-bar-inner">
-        <button class="back-btn" data-target="home">← Home</button>
-        <button class="add-item-btn" id="add-item-btn-want">+ Add</button>
-      </div>
-    </div>
     <nav class="filters" aria-label="Filter reading list">
       <div class="container">
         <div class="section-tabs-row">
@@ -160,6 +143,16 @@
             <button class="section-tab" data-want-section="lectures" role="tab" aria-selected="false">Lectures</button>
             <button class="section-tab" data-want-section="podcasts" role="tab" aria-selected="false">Podcasts</button>
             <button class="section-tab" data-want-section="essays" role="tab" aria-selected="false">Essays</button>
+          </div>
+          <div class="filters-right">
+            <div class="hero-picker hero-picker--header" aria-label="Choose background image">
+              <button class="hero-thumb" data-img="hero.jpg" aria-label="Background 1"><img src="hero.jpg" alt=""></button>
+              <button class="hero-thumb" data-img="IMG_20211217_130258.jpg" aria-label="Background 2"><img src="IMG_20211217_130258.jpg" alt=""></button>
+              <button class="hero-thumb" data-img="IMG_20220315_114652.jpg" aria-label="Background 3"><img src="IMG_20220315_114652.jpg" alt=""></button>
+              <button class="hero-thumb" data-img="IMG_20220619_213007.jpg" aria-label="Background 4"><img src="IMG_20220619_213007.jpg" alt=""></button>
+              <button class="hero-thumb" data-img="IMG_20220620_224031.jpg" aria-label="Background 5"><img src="IMG_20220620_224031.jpg" alt=""></button>
+            </div>
+            <button class="add-item-btn" id="add-item-btn-want">+ Add</button>
           </div>
         </div>
       </div>

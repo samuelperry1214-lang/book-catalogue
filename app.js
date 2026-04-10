@@ -1829,13 +1829,8 @@ function setupEventListeners() {
     });
   });
 
-  // Back buttons (delegated — works for both views)
-  document.querySelectorAll('.back-btn').forEach(btn => {
-    btn.addEventListener('click', () => showView(btn.dataset.target || 'home'));
-  });
-
-  // Header title → home
-  document.getElementById('home-link').addEventListener('click', () => {
+  // Floating home button
+  document.getElementById('home-back-btn').addEventListener('click', () => {
     document.getElementById('home-search').value = '';
     runHomeSearch('');
     showView('home');

@@ -53,53 +53,36 @@ body::after {
 }
 
 /* ─────────────────────────────────────────
-   HEADER
+   FLOATING HOME BUTTON
 ───────────────────────────────────────── */
-header {
-  /* Background image set by JS; fallback to dark */
-  background: var(--header-bg) center 35% / cover no-repeat;
-  position: sticky;
-  top: 0;
-  z-index: 200;
-  overflow: hidden;
-  padding: 1.1rem 0;
+.home-back-btn {
+  position: fixed;
+  top: 1rem;
+  left: 1.2rem;
+  z-index: 300;
+  background: rgba(8, 5, 3, 0.45);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 2rem;
+  padding: 0.38rem 1rem;
+  color: rgba(255, 255, 255, 0.80);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
-/* Dark overlay — same treatment as the hero */
-.header-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(8, 5, 3, 0.58);
-  backdrop-filter: blur(1px);
-  pointer-events: none;
+.home-back-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
-header .container {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-}
-
-#header-stats {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.45);
-  letter-spacing: 0.05em;
-  white-space: nowrap;
-}
-
-.stat-sep { opacity: 0.4; }
+/* Hidden on the home screen */
+body.on-home .home-back-btn { display: none; }
 
 /* ─────────────────────────────────────────
    FILTER BAR
@@ -110,8 +93,16 @@ header .container {
   -webkit-backdrop-filter: blur(24px) saturate(1.6);
   border-bottom: 1px solid rgba(255, 255, 255, 0.10);
   position: sticky;
-  top: 52px; /* clear the sticky header */
+  top: 0;
   z-index: 100;
+}
+
+/* Right-side group: image picker + add button */
+.filters-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 .filters .container {
