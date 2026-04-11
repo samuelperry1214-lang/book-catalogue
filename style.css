@@ -1439,6 +1439,9 @@ body.on-home > header { display: none; }
     text-align: center;
     border-radius: 4px;
   }
+
+  /* Bookmarklet is desktop-only — mobile uses PWA share instead */
+  #setup-btn { display: none; }
 }
 
 /* ─────────────────────────────────────────
