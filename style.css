@@ -810,6 +810,32 @@ body.modal-open { overflow: hidden; }
 /* ─────────────────────────────────────────
    ESSAY CARD
 ───────────────────────────────────────── */
+/* ─── Claude Report cards ─── */
+.cover-wrap--report {
+  aspect-ratio: 3 / 4; /* slightly wider than portrait — document-page shape */
+  background: linear-gradient(160deg, rgba(20,14,8,0.75) 0%, rgba(10,7,3,0.90) 100%);
+  border: 1px solid rgba(255,255,255,0.10);
+}
+
+.cover-placeholder--report {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.25);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cover-wrap--report .cover-img {
+  object-fit: cover;
+  object-position: top center; /* show top of the document */
+}
+
+/* ─────────────────────────────────────────── */
+
 .cover-wrap--essay {
   aspect-ratio: 2 / 3;
   background: linear-gradient(145deg, #EDE5D5 0%, #D8CBAF 100%);

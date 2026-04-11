@@ -490,6 +490,13 @@ const wishlist = [
 ];
 
 // ─────────────────────────────────────────
+// CLAUDE REPORTS (library only)
+// ─────────────────────────────────────────
+
+const reports = [];
+// { id, type: 'report', _dest: 'library', title, author, url, coverUrl, yearAdded, notes }
+
+// ─────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────
 
@@ -526,7 +533,7 @@ function stars(n, colored = false) {
 
 function renderStats() {
   const years = [...new Set(books.map(b => b.yearRead))].sort();
-  const total = books.length + lectures.length + podcasts.length + essays.length;
+  const total = books.length + lectures.length + podcasts.length + essays.length + reports.length;
   const parts = [
     `<span>${total} items</span>`,
     `<span class="stat-sep">·</span>`,
@@ -540,7 +547,7 @@ function renderStats() {
 }
 
 function renderHomeCards() {
-  const libraryTotal = books.length + lectures.length + podcasts.length + essays.length;
+  const libraryTotal = books.length + lectures.length + podcasts.length + essays.length + reports.length;
   document.getElementById('home-count-library').textContent =
     `${libraryTotal} item${libraryTotal !== 1 ? 's' : ''}`;
   const wantTotal = wishlist.length;
@@ -739,6 +746,7 @@ function switchLibraryTab(section) {
   document.getElementById('lectures-section').classList.toggle('hidden', section !== 'lectures');
   document.getElementById('podcasts-section').classList.toggle('hidden', section !== 'podcasts');
   document.getElementById('essays-section').classList.toggle('hidden', section !== 'essays');
+  document.getElementById('reports-section').classList.toggle('hidden', section !== 'reports');
   window.scrollTo(0, 0);
 }
 
@@ -1170,6 +1178,87 @@ function renderEssaysSection() {
   });
 }
 
+function renderReportsSection() {
+  const el = document.getElementById('reports-section');
+  if (!reports.length) {
+    el.innerHTML = `<div class="empty-section"><strong>No reports yet</strong><p>Add a Claude Report using the + Add button or bookmarklet.</p></div>`;
+    return;
+  }
+  el.innerHTML = `
+    <section class="genre-section">
+      <h2 class="genre-title">
+        <span class="genre-label">Claude Reports</span>
+        <span class="genre-count">${reports.length}</span>
+      </h2>
+      <div class="item-grid">
+        ${reports.map(renderReportCard).join('')}
+      </div>
+      <div class="shelf-bar"></div>
+    </section>
+  `;
+  el.querySelectorAll('.item-card').forEach(card => {
+    card.addEventListener('click', () => openReportModal(parseInt(card.dataset.id)));
+    card.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') openReportModal(parseInt(card.dataset.id));
+    });
+  });
+}
+
+function renderReportCard(report) {
+  const hasNotes = report.notes && report.notes.trim().length > 0;
+  return `
+    <article
+      class="item-card report-card"
+      data-id="${report.id}"
+      role="button"
+      tabindex="0"
+      aria-label="${escHtml(report.title)}"
+    >
+      <div class="cover-wrap cover-wrap--report">
+        <div class="cover-placeholder cover-placeholder--report" aria-hidden="true">
+          <span class="report-placeholder-icon">Claude</span>
+        </div>
+        ${report.coverUrl ? `<img class="cover-img" src="${escHtml(report.coverUrl)}" alt="${escHtml(report.title)}" loading="lazy" onload="this.classList.add('loaded')">` : ''}
+        ${hasNotes ? `<div class="review-badge" title="Has notes">✍</div>` : ''}
+      </div>
+      <div class="card-info">
+        <div class="card-meta"><span class="card-year">${report.yearAdded || ''}</span></div>
+        <h3 class="card-title">${escHtml(report.title)}</h3>
+        <p class="card-author">${escHtml(report.author || '')}</p>
+      </div>
+    </article>
+  `;
+}
+
+function openReportModal(id) {
+  const report = reports.find(r => r.id === id);
+  if (!report) return;
+  setModalActions(id, 'report', 'library', report);
+  const modal = document.getElementById('modal');
+  modal.querySelector('.modal-content').className = 'modal-content modal-content--report';
+  document.getElementById('modal-genre').textContent  = 'Claude Report';
+  document.getElementById('modal-title').textContent  = report.title;
+  document.getElementById('modal-author').textContent = report.author || '';
+  document.getElementById('modal-stars').innerHTML    = '';
+  document.getElementById('modal-year').textContent   = report.yearAdded ? `Added ${report.yearAdded}` : '';
+  document.getElementById('modal-review').textContent = report.notes || '';
+  const coverEl = document.getElementById('modal-cover');
+  if (report.coverUrl) { coverEl.src = report.coverUrl; coverEl.style.display = ''; }
+  else { coverEl.src = ''; coverEl.style.display = 'none'; }
+  const linkEl = document.getElementById('modal-link');
+  if (report.url) {
+    linkEl.href = report.url;
+    linkEl.textContent = 'Open Report ↗';
+    linkEl.classList.remove('hidden');
+  } else {
+    linkEl.classList.add('hidden');
+  }
+  document.getElementById('modal-fetch-image').classList.add('hidden');
+  document.getElementById('modal-manual-image').classList.add('hidden');
+  modal.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+}
+
 function renderLectureCard(lecture) {
   const hasNotes = lecture.notes && lecture.notes.trim().length > 0;
   const thumbHtml = lecture.youtubeId
@@ -1510,6 +1599,7 @@ function deleteCurrentItem() {
     if (type === 'lecture') { removeFrom(lectures); renderLecturesSection(); }
     if (type === 'podcast') { removeFrom(podcasts); renderPodcastsSection(); }
     if (type === 'essay')   { removeFrom(essays);   renderEssaysSection(); }
+    if (type === 'report')  { removeFrom(reports);  renderReportsSection(); }
   }
 
   renderStats();
@@ -2018,11 +2108,13 @@ async function mergeUserItems() {
 
   const libraryBooks    = saved.filter(i => i._dest === 'library' && i.type === 'book');
   const libraryLectures = saved.filter(i => i._dest === 'library' && i.type === 'lecture');
+  const libraryReports  = saved.filter(i => i._dest === 'library' && i.type === 'report');
 
   libraryPodcasts.forEach(p => { if (!podcasts.find(x => x.id === p.id)) podcasts.push(p); });
   libraryEssays.forEach(e => { if (!essays.find(x => x.id === e.id)) essays.push(e); });
   libraryBooks.forEach(b => { if (!books.find(x => x.id === b.id)) books.push(b); });
   libraryLectures.forEach(l => { if (!lectures.find(x => x.id === l.id)) lectures.push(l); });
+  libraryReports.forEach(r => { if (!reports.find(x => x.id === r.id)) reports.push(r); });
   wantItems.forEach(w => { if (!wishlist.find(x => x.id === w.id)) wishlist.push(w); });
 }
 
@@ -2224,6 +2316,7 @@ function detectType(url) {
     'pocketcasts.com', 'anchor.fm', 'buzzsprout.com', 'simplecast.com',
     'podbean.com', 'soundcloud.com', 'acast.com', 'transistor.fm', 'podfollow.com'];
   if (podcastDomains.some(d => u.includes(d))) return 'podcast';
+  if (u.includes('docs.google.com')) return 'report';
   return 'essay';
 }
 
@@ -2241,13 +2334,21 @@ function showCoverPreview(imageUrl) {
 
 function updateAddFormFields() {
   const type = document.getElementById('add-type').value;
-  const labels = { essay: 'Author', podcast: 'Podcast / Show', book: 'Author', lecture: 'Channel / Organisation' };
-  const placeholders = { essay: 'Author name…', podcast: 'Podcast name…', book: 'Author name…', lecture: 'Channel or institution…' };
+  const labels = { essay: 'Author', podcast: 'Podcast / Show', book: 'Author', lecture: 'Channel / Organisation', report: 'Author' };
+  const placeholders = { essay: 'Author name…', podcast: 'Podcast name…', book: 'Author name…', lecture: 'Channel or institution…', report: 'Author name…' };
   document.getElementById('add-author-label').textContent = labels[type] || 'Author';
   document.getElementById('add-author').placeholder = placeholders[type] || 'Author…';
   document.getElementById('add-book-fields').classList.toggle('hidden', type !== 'book');
   // Published year only relevant for essays
   document.getElementById('add-published-year-field').classList.toggle('hidden', type !== 'essay');
+  // Reports are library-only — lock dest select
+  const destEl = document.getElementById('add-dest');
+  if (type === 'report') {
+    destEl.value = 'library';
+    destEl.disabled = true;
+  } else {
+    destEl.disabled = false;
+  }
 }
 
 function openAddModal(defaultType) {
@@ -2311,6 +2412,8 @@ function handleAddSubmit() {
       } else if (type === 'lecture') {
         const ytId = extractYouTubeId(url);
         updates = { title, channel: author, youtubeId: ytId || '', courseUrl: ytId ? '' : url, yearWatched: year, notes };
+      } else if (type === 'report') {
+        updates = { title, author, url, coverUrl, yearAdded: year, notes };
       } else {
         updates = { title, author, url, coverUrl, yearRead: year, publishedYear, notes };
       }
@@ -2319,7 +2422,7 @@ function handleAddSubmit() {
 
       // If the type changed, move the item from its old array to the new one
       if (oldType !== type) {
-        const arrayFor = t => ({ book: books, essay: essays, podcast: podcasts, lecture: lectures, want: wishlist })[t]
+        const arrayFor = t => ({ book: books, essay: essays, podcast: podcasts, lecture: lectures, report: reports, want: wishlist })[t]
           || (d === 'want' ? wishlist : null);
         const srcArray = d === 'want' ? wishlist : arrayFor(oldType);
         const dstArray = d === 'want' ? wishlist : arrayFor(type);
@@ -2339,6 +2442,7 @@ function handleAddSubmit() {
         if (sectionsToRender.has('book'))    { renderCatalogue(); renderGenrePills(); renderYearOptions(); }
         if (sectionsToRender.has('lecture')) renderLecturesSection();
         if (sectionsToRender.has('essay'))   renderEssaysSection();
+        if (sectionsToRender.has('report'))  renderReportsSection();
       } else {
         renderWantSection();
       }
@@ -2362,16 +2466,19 @@ function handleAddSubmit() {
   } else if (type === 'lecture') {
     const youtubeId = extractYouTubeId(url);
     item = { id, type: 'lecture', _dest: dest, title, channel: author, youtubeId: youtubeId || '', courseUrl: youtubeId ? '' : url, yearWatched: year, notes };
+  } else if (type === 'report') {
+    item = { id, type: 'report', _dest: 'library', title, author, url, coverUrl, yearAdded: year, notes };
   } else {
     item = { id, type: 'essay', _dest: dest, title, author, url, coverUrl, yearRead: year, publishedYear, notes };
   }
 
   addUserItem(item);
 
-  if (dest === 'library') {
+  if (type === 'report' || dest === 'library') {
     if (type === 'podcast') { podcasts.push(item); renderPodcastsSection(); }
     else if (type === 'book') { books.push(item); renderCatalogue(); renderGenrePills(); renderYearOptions(); }
     else if (type === 'lecture') { lectures.push(item); renderLecturesSection(); }
+    else if (type === 'report') { reports.push(item); renderReportsSection(); }
     else { essays.push(item); renderEssaysSection(); }
   } else {
     wishlist.push(item);
@@ -2382,9 +2489,9 @@ function handleAddSubmit() {
   renderHomeCards();
   closeAddModal();
 
-  if (dest === 'library') {
+  if (type === 'report' || dest === 'library') {
     showView('library');
-    const tabMap = { podcast: 'podcasts', book: 'books', lecture: 'lectures', essay: 'essays' };
+    const tabMap = { podcast: 'podcasts', book: 'books', lecture: 'lectures', essay: 'essays', report: 'reports' };
     switchLibraryTab(tabMap[type] || 'essays');
   } else {
     showView('want');
@@ -2486,6 +2593,7 @@ function setupAddForm() {
     if (url.startsWith('http')) {
       clearTimeout(metaFetchTimer);
       metaFetchTimer = setTimeout(async () => {
+        const isReport = document.getElementById('add-type').value === 'report';
         const meta = await fetchUrlMetadata(url);
         const titleEl  = document.getElementById('add-title');
         const authorEl = document.getElementById('add-author');
@@ -2493,7 +2601,20 @@ function setupAddForm() {
         if (meta.author && !authorEl.value.trim()) authorEl.value = meta.author;
         if (meta.publishedYear && !document.getElementById('add-published-year').value)
           document.getElementById('add-published-year').value = meta.publishedYear;
-        if (meta.image) {
+        // For reports: use Microlink screenshot as the cover image
+        if (isReport && !meta.image) {
+          try {
+            const sr = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`);
+            if (sr.ok) {
+              const sd = await sr.json();
+              const screenshotUrl = sd.data?.screenshot?.url || (typeof sd.data === 'string' ? sd.data : '');
+              if (screenshotUrl) {
+                document.getElementById('add-cover-url').value = screenshotUrl;
+                showCoverPreview(screenshotUrl);
+              }
+            }
+          } catch {}
+        } else if (meta.image) {
           document.getElementById('add-cover-url').value = meta.image;
           showCoverPreview(meta.image);
         }
@@ -2612,7 +2733,7 @@ function showToast(message) {
 function setupQuickAddModal() {
   // Build bookmarklet href — two-step picker: dest then type
   const fb = FIREBASE_DB_URL;
-  const code = `(function(){document.getElementById('__lib__')&&document.getElementById('__lib__').remove();var T=document.title.replace(/\s*[-–|]\s*YouTube\s*$/i,'').trim();var U=location.href;var IMG='';var ytM=U.match(/[?&]v=([^&]+)/);if(ytM){IMG='https://img.youtube.com/vi/'+ytM[1]+'/maxresdefault.jpg';}else{var ogI=document.querySelector('meta[property="og:image"]');if(ogI)IMG=ogI.content;}var A='';var mAuth=document.querySelector('meta[name="author"]');var aAuth=document.querySelector('meta[property="article:author"]');if(mAuth&&mAuth.content)A=mAuth.content;else if(aAuth&&aAuth.content)A=aAuth.content;if(ytM){var ycn=document.querySelector('ytd-channel-name yt-formatted-string');if(ycn&&ycn.textContent.trim())A=ycn.textContent.trim();}function detectBType(u){var ul=u.toLowerCase();if(ul.includes('youtube.com')||ul.includes('youtu.be'))return 'lecture';if(ul.includes('spotify.com')||ul.includes('podcasts.apple.com')||ul.includes('overcast.fm')||ul.includes('pocketcasts.com'))return 'podcast';if(ul.includes('substack.com')||ul.includes('newyorker.com')||ul.includes('nytimes.com')||ul.includes('theguardian.com')||ul.includes('newstatesman.com')||ul.includes('economist.com')||ul.includes('theatlantic.com'))return 'essay';return null;}var autoType=detectBType(U);var Y=new Date().getFullYear();var FB=${JSON.stringify(fb)};function doSave(existItems,type,dest,notesTxt){document.getElementById('__lib__').remove();var item={id:Date.now(),type:type,_dest:dest,title:T,author:A,url:U,coverUrl:IMG,yearRead:Y,yearListened:Y,yearWatched:Y,show:A,channel:A,notes:notesTxt||'',youtubeId:ytM?ytM[1]:''};existItems.push(item);fetch(FB+'/library_user_items.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(existItems)}).then(()=>{var d=document.createElement('div');d.style='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2d6a4f;color:#fff;padding:10px 22px;border-radius:20px;font:700 14px system-ui;z-index:2147483647;box-shadow:0 4px 16px rgba(0,0,0,.25)';d.textContent='\u2713 Saved to library';document.documentElement.appendChild(d);setTimeout(()=>d.remove(),2400);}).catch(()=>alert('Could not save'));}function showDupeWarn(dupe,onAnyway){s3.style.display='none';var dw=document.createElement('div');var dwt=document.createElement('div');dwt.style='font:700 13px system-ui;color:#FFD580;margin-bottom:6px';dwt.textContent='Already in your '+(dupe._dest==='want'?'Reading List':'Library');var dws=document.createElement('div');dws.style='font:12px/1.4 system-ui;color:rgba(255,255,255,.5);margin-bottom:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';dws.textContent=dupe.title||'';var dwb=document.createElement('div');dwb.style='display:flex;gap:8px;justify-content:flex-end';var cxB=document.createElement('button');cxB.textContent='Cancel';cxB.style='background:none;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 14px;color:rgba(255,255,255,.6);font:13px system-ui;cursor:pointer';cxB.onclick=function(){ov.remove();};var saB=document.createElement('button');saB.textContent='Save anyway';saB.style='background:rgba(140,21,21,.6);border:1px solid rgba(200,60,60,.35);border-radius:8px;padding:8px 14px;color:#fff;font:700 13px system-ui;cursor:pointer';saB.onclick=onAnyway;dwb.appendChild(cxB);dwb.appendChild(saB);dw.appendChild(dwt);dw.appendChild(dws);dw.appendChild(dwb);card.appendChild(dw);}function save(type,dest,notesTxt){fetch(FB+'/library_user_items.json').then(r=>r.json()).then(function(data){var items=Array.isArray(data)?data:[];var dupe=U?items.find(function(x){return x.url&&x.url===U;}):null;if(dupe){showDupeWarn(dupe,function(){doSave(items,type,dest,notesTxt);});}else{doSave(items,type,dest,notesTxt);}}).catch(function(){alert('Could not save');});}var ov=document.createElement('div');ov.id='__lib__';ov.style='position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.42);display:flex;align-items:flex-start;justify-content:flex-end;padding:18px';var card=document.createElement('div');card.style='background:#1c1108;color:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.5);padding:20px 22px;width:260px;font:14px/1.5 system-ui;position:relative';var ttl=document.createElement('div');ttl.style='font-weight:700;font-size:13px;color:#fff;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';ttl.textContent=T.length>50?T.slice(0,50)+'\u2026':T;var host=document.createElement('div');host.style='font-size:11px;color:rgba(255,255,255,.45);margin-bottom:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';try{host.textContent=new URL(U).hostname.replace(/^www\\./,'');}catch(e){host.textContent='';}var x=document.createElement('button');x.textContent='\u00d7';x.style='position:absolute;top:10px;right:14px;background:none;border:none;font-size:22px;line-height:1;cursor:pointer;color:rgba(255,255,255,.45)';x.onclick=function(){ov.remove();};card.appendChild(x);card.appendChild(ttl);card.appendChild(host);var s1=document.createElement('div');var lbl1=document.createElement('div');lbl1.style='font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px';lbl1.textContent='Add to';var destRow=document.createElement('div');destRow.style='display:grid;grid-template-columns:1fr 1fr;gap:8px';function destBtn(label,sub,dest){var b=document.createElement('button');b.style='background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:10px 8px;color:#fff;cursor:pointer;text-align:left';var d1=document.createElement('div');d1.style='font:700 13px system-ui';d1.textContent=label;var d2=document.createElement('div');d2.style='font:11px system-ui;color:rgba(255,255,255,.45);margin-top:2px';d2.textContent=sub;b.appendChild(d1);b.appendChild(d2);b.onmouseover=function(){b.style.background='rgba(255,255,255,.15)';};b.onmouseout=function(){b.style.background='rgba(255,255,255,.08)';};b.onclick=function(){s1.style.display='none';chosenDest=dest;if(autoType){chosenType=autoType;s3.style.display='block';setTimeout(function(){ntA.focus();},50);}else{s2.style.display='block';}};return b;}var chosenDest,chosenType;destRow.appendChild(destBtn('Library','Read it',\x27library\x27));destRow.appendChild(destBtn('Reading List','Want to read',\x27want\x27));s1.appendChild(lbl1);s1.appendChild(destRow);var s2=document.createElement('div');s2.style='display:none';var lbl2=document.createElement('div');lbl2.style='font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px';lbl2.textContent='What type?';var typeGrid=document.createElement('div');typeGrid.style='display:grid;grid-template-columns:1fr 1fr;gap:8px';[['Book','book'],['Essay','essay'],['Podcast','podcast'],['Lecture','lecture']].forEach(function(t){var b=document.createElement('button');b.textContent=t[0];b.style='background:rgba(140,21,21,.6);border:1px solid rgba(200,60,60,.35);border-radius:8px;padding:9px;color:#fff;font:700 13px system-ui;cursor:pointer';b.onmouseover=function(){b.style.background='rgba(140,21,21,.9)';};b.onmouseout=function(){b.style.background='rgba(140,21,21,.6)';};b.onclick=function(){chosenType=t[1];s2.style.display='none';s3.style.display='block';setTimeout(function(){ntA.focus();},50);};typeGrid.appendChild(b);});s2.appendChild(lbl2);s2.appendChild(typeGrid);var s3=document.createElement('div');s3.style='display:none';var lbl3=document.createElement('div');lbl3.style='font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px';lbl3.textContent='Notes (optional)';var ntA=document.createElement('textarea');ntA.placeholder='Any thoughts\u2026 (Cmd+Enter to save)';ntA.style='width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:8px 10px;color:#fff;font:13px/1.5 system-ui;resize:vertical;min-height:64px;box-sizing:border-box';ntA.addEventListener('keydown',function(e){if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){svBtn.click();}});var svRow=document.createElement('div');svRow.style='display:flex;justify-content:space-between;align-items:center;margin-top:10px';var skipBtn=document.createElement('button');skipBtn.textContent='Skip';skipBtn.style='background:none;border:none;color:rgba(255,255,255,.4);font:13px system-ui;cursor:pointer;padding:0';skipBtn.onclick=function(){save(chosenType,chosenDest,'');};var svBtn=document.createElement('button');svBtn.textContent='Save';svBtn.style='background:#2d6a4f;border:none;border-radius:8px;padding:8px 20px;color:#fff;font:700 13px system-ui;cursor:pointer';svBtn.onclick=function(){save(chosenType,chosenDest,ntA.value.trim());};svRow.appendChild(skipBtn);svRow.appendChild(svBtn);s3.appendChild(lbl3);s3.appendChild(ntA);s3.appendChild(svRow);card.appendChild(s1);card.appendChild(s2);card.appendChild(s3);ov.appendChild(card);document.documentElement.appendChild(ov);ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});})()`;
+  const code = `(function(){document.getElementById('__lib__')&&document.getElementById('__lib__').remove();var T=document.title.replace(/\s*[-–|]\s*YouTube\s*$/i,'').trim();var U=location.href;var IMG='';var ytM=U.match(/[?&]v=([^&]+)/);if(ytM){IMG='https://img.youtube.com/vi/'+ytM[1]+'/maxresdefault.jpg';}else{var ogI=document.querySelector('meta[property="og:image"]');if(ogI)IMG=ogI.content;}var A='';var mAuth=document.querySelector('meta[name="author"]');var aAuth=document.querySelector('meta[property="article:author"]');if(mAuth&&mAuth.content)A=mAuth.content;else if(aAuth&&aAuth.content)A=aAuth.content;if(ytM){var ycn=document.querySelector('ytd-channel-name yt-formatted-string');if(ycn&&ycn.textContent.trim())A=ycn.textContent.trim();}function detectBType(u){var ul=u.toLowerCase();if(ul.includes('youtube.com')||ul.includes('youtu.be'))return 'lecture';if(ul.includes('spotify.com')||ul.includes('podcasts.apple.com')||ul.includes('overcast.fm')||ul.includes('pocketcasts.com'))return 'podcast';if(ul.includes('substack.com')||ul.includes('newyorker.com')||ul.includes('nytimes.com')||ul.includes('theguardian.com')||ul.includes('newstatesman.com')||ul.includes('economist.com')||ul.includes('theatlantic.com'))return 'essay';if(ul.includes('docs.google.com'))return 'report';return null;}var autoType=detectBType(U);var Y=new Date().getFullYear();var FB=${JSON.stringify(fb)};function doSave(existItems,type,dest,notesTxt){document.getElementById('__lib__').remove();var item={id:Date.now(),type:type,_dest:type==='report'?'library':dest,title:T,author:A,url:U,coverUrl:IMG,yearRead:Y,yearListened:Y,yearWatched:Y,yearAdded:Y,show:A,channel:A,notes:notesTxt||'',youtubeId:ytM?ytM[1]:''};existItems.push(item);fetch(FB+'/library_user_items.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(existItems)}).then(()=>{var d=document.createElement('div');d.style='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2d6a4f;color:#fff;padding:10px 22px;border-radius:20px;font:700 14px system-ui;z-index:2147483647;box-shadow:0 4px 16px rgba(0,0,0,.25)';d.textContent='\u2713 Saved to library';document.documentElement.appendChild(d);setTimeout(()=>d.remove(),2400);}).catch(()=>alert('Could not save'));}function showDupeWarn(dupe,onAnyway){s3.style.display='none';var dw=document.createElement('div');var dwt=document.createElement('div');dwt.style='font:700 13px system-ui;color:#FFD580;margin-bottom:6px';dwt.textContent='Already in your '+(dupe._dest==='want'?'Reading List':'Library');var dws=document.createElement('div');dws.style='font:12px/1.4 system-ui;color:rgba(255,255,255,.5);margin-bottom:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';dws.textContent=dupe.title||'';var dwb=document.createElement('div');dwb.style='display:flex;gap:8px;justify-content:flex-end';var cxB=document.createElement('button');cxB.textContent='Cancel';cxB.style='background:none;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 14px;color:rgba(255,255,255,.6);font:13px system-ui;cursor:pointer';cxB.onclick=function(){ov.remove();};var saB=document.createElement('button');saB.textContent='Save anyway';saB.style='background:rgba(140,21,21,.6);border:1px solid rgba(200,60,60,.35);border-radius:8px;padding:8px 14px;color:#fff;font:700 13px system-ui;cursor:pointer';saB.onclick=onAnyway;dwb.appendChild(cxB);dwb.appendChild(saB);dw.appendChild(dwt);dw.appendChild(dws);dw.appendChild(dwb);card.appendChild(dw);}function save(type,dest,notesTxt){fetch(FB+'/library_user_items.json').then(r=>r.json()).then(function(data){var items=Array.isArray(data)?data:[];var dupe=U?items.find(function(x){return x.url&&x.url===U;}):null;if(dupe){showDupeWarn(dupe,function(){doSave(items,type,dest,notesTxt);});}else{doSave(items,type,dest,notesTxt);}}).catch(function(){alert('Could not save');});}var ov=document.createElement('div');ov.id='__lib__';ov.style='position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.42);display:flex;align-items:flex-start;justify-content:flex-end;padding:18px';var card=document.createElement('div');card.style='background:#1c1108;color:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.5);padding:20px 22px;width:260px;font:14px/1.5 system-ui;position:relative';var ttl=document.createElement('div');ttl.style='font-weight:700;font-size:13px;color:#fff;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';ttl.textContent=T.length>50?T.slice(0,50)+'\u2026':T;var host=document.createElement('div');host.style='font-size:11px;color:rgba(255,255,255,.45);margin-bottom:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';try{host.textContent=new URL(U).hostname.replace(/^www\\./,'');}catch(e){host.textContent='';}var x=document.createElement('button');x.textContent='\u00d7';x.style='position:absolute;top:10px;right:14px;background:none;border:none;font-size:22px;line-height:1;cursor:pointer;color:rgba(255,255,255,.45)';x.onclick=function(){ov.remove();};card.appendChild(x);card.appendChild(ttl);card.appendChild(host);var s1=document.createElement('div');var lbl1=document.createElement('div');lbl1.style='font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px';lbl1.textContent='Add to';var destRow=document.createElement('div');destRow.style='display:grid;grid-template-columns:1fr 1fr;gap:8px';function destBtn(label,sub,dest){var b=document.createElement('button');b.style='background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:10px 8px;color:#fff;cursor:pointer;text-align:left';var d1=document.createElement('div');d1.style='font:700 13px system-ui';d1.textContent=label;var d2=document.createElement('div');d2.style='font:11px system-ui;color:rgba(255,255,255,.45);margin-top:2px';d2.textContent=sub;b.appendChild(d1);b.appendChild(d2);b.onmouseover=function(){b.style.background='rgba(255,255,255,.15)';};b.onmouseout=function(){b.style.background='rgba(255,255,255,.08)';};b.onclick=function(){s1.style.display='none';chosenDest=dest;if(autoType){chosenType=autoType;s3.style.display='block';setTimeout(function(){ntA.focus();},50);}else{s2.style.display='block';}};return b;}var chosenDest,chosenType;destRow.appendChild(destBtn('Library','Read it',\x27library\x27));destRow.appendChild(destBtn('Reading List','Want to read',\x27want\x27));s1.appendChild(lbl1);s1.appendChild(destRow);var s2=document.createElement('div');s2.style='display:none';var lbl2=document.createElement('div');lbl2.style='font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px';lbl2.textContent='What type?';var typeGrid=document.createElement('div');typeGrid.style='display:grid;grid-template-columns:1fr 1fr;gap:8px';[['Book','book'],['Essay','essay'],['Podcast','podcast'],['Lecture','lecture'],['Report','report']].forEach(function(t){var b=document.createElement('button');b.textContent=t[0];b.style='background:rgba(140,21,21,.6);border:1px solid rgba(200,60,60,.35);border-radius:8px;padding:9px;color:#fff;font:700 13px system-ui;cursor:pointer';b.onmouseover=function(){b.style.background='rgba(140,21,21,.9)';};b.onmouseout=function(){b.style.background='rgba(140,21,21,.6)';};b.onclick=function(){chosenType=t[1];s2.style.display='none';s3.style.display='block';setTimeout(function(){ntA.focus();},50);};typeGrid.appendChild(b);});s2.appendChild(lbl2);s2.appendChild(typeGrid);var s3=document.createElement('div');s3.style='display:none';var lbl3=document.createElement('div');lbl3.style='font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px';lbl3.textContent='Notes (optional)';var ntA=document.createElement('textarea');ntA.placeholder='Any thoughts\u2026 (Cmd+Enter to save)';ntA.style='width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:8px 10px;color:#fff;font:13px/1.5 system-ui;resize:vertical;min-height:64px;box-sizing:border-box';ntA.addEventListener('keydown',function(e){if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){svBtn.click();}});var svRow=document.createElement('div');svRow.style='display:flex;justify-content:space-between;align-items:center;margin-top:10px';var skipBtn=document.createElement('button');skipBtn.textContent='Skip';skipBtn.style='background:none;border:none;color:rgba(255,255,255,.4);font:13px system-ui;cursor:pointer;padding:0';skipBtn.onclick=function(){save(chosenType,chosenDest,'');};var svBtn=document.createElement('button');svBtn.textContent='Save';svBtn.style='background:#2d6a4f;border:none;border-radius:8px;padding:8px 20px;color:#fff;font:700 13px system-ui;cursor:pointer';svBtn.onclick=function(){save(chosenType,chosenDest,ntA.value.trim());};svRow.appendChild(skipBtn);svRow.appendChild(svBtn);s3.appendChild(lbl3);s3.appendChild(ntA);s3.appendChild(svRow);card.appendChild(s1);card.appendChild(s2);card.appendChild(s3);ov.appendChild(card);document.documentElement.appendChild(ov);ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});})()`;
   document.getElementById('bookmarklet-link').href = 'javascript:' + code;
 
   const setupBtn = document.getElementById('setup-btn');
@@ -2691,6 +2812,7 @@ async function initApp() {
   renderLecturesSection();
   renderPodcastsSection();
   renderEssaysSection();
+  renderReportsSection();
   renderWantSection();
   setupEventListeners();
   setupAddForm();
