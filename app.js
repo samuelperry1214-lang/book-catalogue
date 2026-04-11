@@ -2622,6 +2622,27 @@ function setupAddForm() {
   let metaFetchTimer = null;
   document.getElementById('add-url').addEventListener('input', e => {
     const url = e.target.value.trim();
+
+    // In edit mode: don't re-detect type or overwrite title/author — just update cover
+    if (editingItemId !== null) {
+      if (url.startsWith('http')) {
+        clearTimeout(metaFetchTimer);
+        metaFetchTimer = setTimeout(async () => {
+          const type = document.getElementById('add-type').value;
+          const coverUrlEl = document.getElementById('add-cover-url');
+          if (type === 'report') {
+            const thumbUrl = googleDriveThumbnail(url);
+            if (thumbUrl) { coverUrlEl.value = thumbUrl; showCoverPreview(thumbUrl); }
+          } else {
+            const meta = await fetchUrlMetadata(url);
+            if (meta.image) { coverUrlEl.value = meta.image; showCoverPreview(meta.image); }
+          }
+        }, 700);
+      }
+      return;
+    }
+
+    // New-item mode: auto-detect type and fill all fields
     const detected = detectType(url);
     document.getElementById('add-type').value = detected;
     updateAddFormFields();
@@ -2637,7 +2658,6 @@ function setupAddForm() {
         if (meta.author && !authorEl.value.trim()) authorEl.value = meta.author;
         if (meta.publishedYear && !document.getElementById('add-published-year').value)
           document.getElementById('add-published-year').value = meta.publishedYear;
-        // For reports: use Google Drive thumbnail API (requires sharing URL, not /pub URL)
         if (isReport && !meta.image) {
           const thumbUrl = googleDriveThumbnail(url);
           if (thumbUrl) {
