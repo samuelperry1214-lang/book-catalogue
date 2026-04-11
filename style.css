@@ -1442,6 +1442,17 @@ body.on-home > header { display: none; }
 
   /* Bookmarklet is desktop-only — mobile uses PWA share instead */
   #setup-btn { display: none; }
+
+  /* Stack footer vertically: quick-add buttons on top, image picker below */
+  .home-footer {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 1rem 1.2rem 1.4rem;
+  }
+  /* Quick-add comes second in HTML but should appear first on mobile */
+  .home-quick-add { order: -1; }
+  .hero-picker { justify-content: center; }
 }
 
 /* ─────────────────────────────────────────
