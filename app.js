@@ -2156,21 +2156,24 @@ function updateUserItem(id, updates) {
   }
 }
 
-// Fetch missing cover screenshots for reports added via bookmarklet (fire-and-forget)
+// Extract a Drive file ID and return a thumbnail URL.
+// Works for sharing URLs (/d/FILE_ID/) but NOT published URLs (/d/e/2PACX-...).
+function googleDriveThumbnail(url) {
+  const m = url.match(/\/d\/([a-zA-Z0-9_-]{25,})\//);
+  if (!m || m[1].startsWith('2PACX-')) return '';
+  return `https://drive.google.com/thumbnail?id=${m[1]}&sz=w640`;
+}
+
+// Backfill missing covers for reports added via bookmarklet (fire-and-forget)
 async function backfillReportCovers() {
   const missing = reports.filter(r => !r.coverUrl && r.url);
   for (const report of missing) {
-    try {
-      const sr = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(report.url)}&screenshot=true`);
-      if (!sr.ok) continue;
-      const sd = await sr.json();
-      const screenshotUrl = sd.data?.screenshot?.url || '';
-      if (screenshotUrl) {
-        report.coverUrl = screenshotUrl;
-        updateUserItem(report.id, { coverUrl: screenshotUrl });
-        renderReportsSection();
-      }
-    } catch {}
+    const thumbUrl = googleDriveThumbnail(report.url);
+    if (thumbUrl) {
+      report.coverUrl = thumbUrl;
+      updateUserItem(report.id, { coverUrl: thumbUrl });
+      renderReportsSection();
+    }
   }
 }
 
@@ -2365,6 +2368,10 @@ function updateAddFormFields() {
   const type = document.getElementById('add-type').value;
   const labels = { essay: 'Author', podcast: 'Podcast / Show', book: 'Author', lecture: 'Channel / Organisation', report: 'Author' };
   const placeholders = { essay: 'Author name…', podcast: 'Podcast name…', book: 'Author name…', lecture: 'Channel or institution…', report: 'Author name…' };
+  // For reports, update the URL placeholder to guide toward sharing URLs (needed for thumbnail)
+  document.getElementById('add-url').placeholder = type === 'report'
+    ? 'Paste Google Docs sharing URL (Share → Anyone with link) for auto-thumbnail…'
+    : 'Paste a URL — title & image load automatically…';
   document.getElementById('add-author-label').textContent = labels[type] || 'Author';
   document.getElementById('add-author').placeholder = placeholders[type] || 'Author…';
   document.getElementById('add-book-fields').classList.toggle('hidden', type !== 'book');
@@ -2630,19 +2637,13 @@ function setupAddForm() {
         if (meta.author && !authorEl.value.trim()) authorEl.value = meta.author;
         if (meta.publishedYear && !document.getElementById('add-published-year').value)
           document.getElementById('add-published-year').value = meta.publishedYear;
-        // For reports: use Microlink screenshot as the cover image
+        // For reports: use Google Drive thumbnail API (requires sharing URL, not /pub URL)
         if (isReport && !meta.image) {
-          try {
-            const sr = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true`);
-            if (sr.ok) {
-              const sd = await sr.json();
-              const screenshotUrl = sd.data?.screenshot?.url || '';
-              if (screenshotUrl) {
-                document.getElementById('add-cover-url').value = screenshotUrl;
-                showCoverPreview(screenshotUrl);
-              }
-            }
-          } catch {}
+          const thumbUrl = googleDriveThumbnail(url);
+          if (thumbUrl) {
+            document.getElementById('add-cover-url').value = thumbUrl;
+            showCoverPreview(thumbUrl);
+          }
         } else if (meta.image) {
           document.getElementById('add-cover-url').value = meta.image;
           showCoverPreview(meta.image);
