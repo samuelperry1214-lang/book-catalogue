@@ -1738,6 +1738,72 @@ body.on-home > header { display: none; }
 .add-stars button.hover { color: var(--wood); }
 
 /* ─────────────────────────────────────────
+   HOME QUICK-ADD WIDGET (two-step)
+───────────────────────────────────────── */
+.home-quick-add {
+  display: flex;
+  align-items: center;
+}
+
+.quick-add-step {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.qa-dest-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 2rem;
+  padding: 0.32rem 0.95rem;
+  color: rgba(255, 255, 255, 0.75);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.qa-dest-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.40);
+}
+
+.qa-type-btn {
+  background: rgba(140, 21, 21, 0.55);
+  border: 1px solid rgba(200, 60, 60, 0.45);
+  border-radius: 2rem;
+  padding: 0.28rem 0.8rem;
+  color: rgba(255, 255, 255, 0.88);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.qa-type-btn:hover {
+  background: rgba(140, 21, 21, 0.85);
+  color: #fff;
+}
+
+.qa-cancel-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.40);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  transition: color 0.15s;
+  line-height: 1;
+}
+.qa-cancel-btn:hover { color: rgba(255, 255, 255, 0.80); }
+
+/* ─────────────────────────────────────────
    QUICK-ADD: SETUP BUTTON + MODAL
 ───────────────────────────────────────── */
 .home-setup-row {

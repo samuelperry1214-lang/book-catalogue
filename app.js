@@ -2385,9 +2385,8 @@ function onEssayCoverLoad(img) {
 
 function setHeroImage(img) {
   const url = `url('${CSS.escape(img)}')`;
-  document.body.style.backgroundImage = url;          // full-page background
+  document.body.style.backgroundImage = url;
   document.getElementById('view-home').style.backgroundImage = url;
-  document.querySelector('header').style.backgroundImage = url;
 }
 
 function setupHeroPicker() {
@@ -2529,13 +2528,50 @@ function setupQuickAddModal() {
   const code = `(function(){document.getElementById('__lib__')&&document.getElementById('__lib__').remove();var ogT=document.querySelector('meta[property="og:title"]');var ogI=document.querySelector('meta[property="og:image"]');var T=ogT?ogT.content:document.title;var IMG=ogI?ogI.content:'';var U=location.href;var Y=new Date().getFullYear();var FB=${JSON.stringify(fb)};function save(type,dest){document.getElementById('__lib__').remove();var item={id:Date.now(),type:type,_dest:dest,title:T,author:'',url:U,coverUrl:IMG,yearRead:Y,yearListened:Y,yearWatched:Y,show:'',channel:'',notes:''};fetch(FB+'/library_user_items.json').then(r=>r.json()).then(data=>{var items=Array.isArray(data)?data:[];items.push(item);return fetch(FB+'/library_user_items.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(items)});}).then(()=>{var d=document.createElement('div');d.style='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2d6a4f;color:#fff;padding:10px 22px;border-radius:20px;font:700 14px system-ui;z-index:2147483647;box-shadow:0 4px 16px rgba(0,0,0,.25)';d.textContent='\u2713 Saved';document.body.appendChild(d);setTimeout(()=>d.remove(),2200);}).catch(()=>alert('Could not save'));}var ov=document.createElement('div');ov.id='__lib__';ov.style='position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.35);display:flex;align-items:flex-start;justify-content:flex-end;padding:18px';var card=document.createElement('div');card.style='background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.28);padding:20px;width:270px;font:14px/1.5 system-ui;position:relative';var ttl=document.createElement('div');ttl.style='font-weight:700;color:#1a1208;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';ttl.textContent=T.length>52?T.slice(0,52)+'\u2026':T;var host=document.createElement('div');host.style='font-size:12px;color:#7a6248;margin-bottom:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';try{host.textContent=new URL(U).hostname;}catch(e){host.textContent=U;}var lbl=document.createElement('div');lbl.style='font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#7a6248;margin-bottom:8px';lbl.textContent='Add to';var grid=document.createElement('div');grid.style='display:grid;grid-template-columns:1fr 1fr;gap:8px';[['Reading List','essay','want','#8C1515'],['Essays','essay','library','#2d6a4f'],['Podcasts','podcast','library','#1a4a7a'],['Books','book','library','#5a3a1a']].forEach(function(b){var btn=document.createElement('button');btn.textContent=b[0];btn.style='background:'+b[3]+';color:#fff;border:none;border-radius:7px;padding:9px 10px;font:700 13px system-ui;cursor:pointer';btn.onclick=function(){save(b[1],b[2]);};grid.appendChild(btn);});var x=document.createElement('button');x.textContent='\u00d7';x.style='position:absolute;top:10px;right:14px;background:none;border:none;font-size:22px;line-height:1;cursor:pointer;color:#aaa';x.onclick=function(){ov.remove();};card.appendChild(x);card.appendChild(ttl);card.appendChild(host);card.appendChild(lbl);card.appendChild(grid);ov.appendChild(card);document.body.appendChild(ov);ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});})()`;
   document.getElementById('bookmarklet-link').href = 'javascript:' + code;
 
-  document.getElementById('setup-btn').addEventListener('click', () => {
-    document.getElementById('setup-modal').classList.remove('hidden');
-    document.body.classList.add('modal-open');
-  });
+  const setupBtn = document.getElementById('setup-btn');
+  if (setupBtn) {
+    setupBtn.addEventListener('click', () => {
+      document.getElementById('setup-modal').classList.remove('hidden');
+      document.body.classList.add('modal-open');
+    });
+  }
   document.getElementById('setup-modal-close').addEventListener('click', closeSetupModal);
   document.getElementById('setup-modal').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeSetupModal();
+  });
+}
+
+function setupHomeQuickAdd() {
+  let chosenDest = null;
+
+  const step1 = document.getElementById('qa-step-1');
+  const step2 = document.getElementById('qa-step-2');
+
+  step1.querySelectorAll('.qa-dest-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      chosenDest = btn.dataset.dest;
+      step1.classList.add('hidden');
+      step2.classList.remove('hidden');
+    });
+  });
+
+  step2.querySelectorAll('.qa-type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Reset widget back to step 1
+      step2.classList.add('hidden');
+      step1.classList.remove('hidden');
+      // Open the add modal with dest + type pre-selected
+      openAddModal(btn.dataset.type);
+      document.getElementById('add-dest').value = chosenDest;
+      updateAddFormFields();
+      chosenDest = null;
+    });
+  });
+
+  step2.querySelector('.qa-cancel-btn').addEventListener('click', () => {
+    step2.classList.add('hidden');
+    step1.classList.remove('hidden');
+    chosenDest = null;
   });
 }
 
@@ -2572,6 +2608,7 @@ async function initApp() {
   setupEventListeners();
   setupAddForm();
   setupQuickAddModal();
+  setupHomeQuickAdd();
   setupHeroPicker();
   document.getElementById('add-year').value = new Date().getFullYear();
   handleShareTarget();

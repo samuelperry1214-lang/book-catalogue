@@ -72,8 +72,20 @@
         <button class="hero-thumb" data-img="IMG_20220619_213007.jpg" aria-label="Background 4"><img src="IMG_20220619_213007.jpg" alt=""></button>
         <button class="hero-thumb" data-img="IMG_20220620_224031.jpg" aria-label="Background 5"><img src="IMG_20220620_224031.jpg" alt=""></button>
       </div>
-      <div class="home-setup-row">
-        <button id="setup-btn" class="setup-link">⚡ Quick-add setup</button>
+      <div class="home-quick-add" id="home-quick-add">
+        <!-- Step 1: pick destination -->
+        <div class="quick-add-step" id="qa-step-1">
+          <button class="qa-dest-btn" data-dest="library">+ Library</button>
+          <button class="qa-dest-btn" data-dest="want">+ Reading List</button>
+        </div>
+        <!-- Step 2: pick type (hidden until dest chosen) -->
+        <div class="quick-add-step hidden" id="qa-step-2">
+          <button class="qa-type-btn" data-type="book">Book</button>
+          <button class="qa-type-btn" data-type="essay">Essay</button>
+          <button class="qa-type-btn" data-type="podcast">Podcast</button>
+          <button class="qa-type-btn" data-type="lecture">Lecture</button>
+          <button class="qa-cancel-btn" aria-label="Cancel">✕</button>
+        </div>
       </div>
     </footer>
 
