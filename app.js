@@ -2481,29 +2481,64 @@ function handleShareTarget() {
   // Remove params so a reload doesn't re-add
   window.history.replaceState({}, '', window.location.pathname);
 
-  // Open the add modal pre-filled so the user can choose type, destination, and confirm
-  openAddModal();
-  document.getElementById('add-dest').value = 'want';
-  document.getElementById('add-url').value = sharedUrl;
+  // Show the two-step share overlay so user picks dest then type
+  const overlay  = document.getElementById('share-overlay');
+  const urlLabel = document.getElementById('share-overlay-url');
+  const step1    = document.getElementById('share-step-1');
+  const step2    = document.getElementById('share-step-2');
 
-  const detected = detectType(sharedUrl);
-  document.getElementById('add-type').value = detected;
-  updateAddFormFields();
+  // Show the domain or title as a hint
+  try {
+    urlLabel.textContent = sharedTitle || new URL(sharedUrl).hostname.replace(/^www\./, '');
+  } catch { urlLabel.textContent = sharedUrl.slice(0, 60); }
 
-  // Fetch metadata in the background
-  fetchUrlMetadata(sharedUrl).then(meta => {
-    const titleEl  = document.getElementById('add-title');
-    const authorEl = document.getElementById('add-author');
-    if (!titleEl.value.trim())  titleEl.value  = meta.title  || sharedTitle || titleFromUrl(sharedUrl);
-    if (!authorEl.value.trim() && meta.author) authorEl.value = meta.author;
-    if (meta.image) {
-      document.getElementById('add-cover-url').value = meta.image;
-      showCoverPreview(meta.image);
-    }
+  step1.classList.remove('hidden');
+  step2.classList.add('hidden');
+  overlay.classList.remove('hidden');
+
+  let chosenDest = null;
+
+  // Step 1 — pick destination
+  step1.querySelectorAll('.share-dest-btn').forEach(btn => {
+    btn.onclick = () => {
+      chosenDest = btn.dataset.dest;
+      step1.classList.add('hidden');
+      step2.classList.remove('hidden');
+    };
   });
 
-  // Set title immediately if available (before fetch completes)
-  if (sharedTitle) document.getElementById('add-title').value = sharedTitle;
+  // Step 2 — pick type, then open the add modal pre-filled
+  step2.querySelectorAll('.share-type-btn').forEach(btn => {
+    btn.onclick = () => {
+      overlay.classList.add('hidden');
+
+      const detected = btn.dataset.type || detectType(sharedUrl);
+      openAddModal(detected);
+      document.getElementById('add-dest').value = chosenDest;
+      document.getElementById('add-url').value  = sharedUrl;
+      updateAddFormFields();
+
+      // Fetch metadata in the background
+      fetchUrlMetadata(sharedUrl).then(meta => {
+        const titleEl  = document.getElementById('add-title');
+        const authorEl = document.getElementById('add-author');
+        if (!titleEl.value.trim())  titleEl.value  = meta.title || sharedTitle || titleFromUrl(sharedUrl);
+        if (!authorEl.value.trim() && meta.author) authorEl.value = meta.author;
+        if (meta.publishedYear && !document.getElementById('add-published-year').value)
+          document.getElementById('add-published-year').value = meta.publishedYear;
+        if (meta.image) {
+          document.getElementById('add-cover-url').value = meta.image;
+          showCoverPreview(meta.image);
+        }
+      });
+
+      if (sharedTitle) document.getElementById('add-title').value = sharedTitle;
+    };
+  });
+
+  document.getElementById('share-overlay-cancel').onclick = () => {
+    overlay.classList.add('hidden');
+  };
 }
 
 function showToast(message) {
@@ -2523,9 +2558,9 @@ function showToast(message) {
 // ─────────────────────────────────────────
 
 function setupQuickAddModal() {
-  // Build bookmarklet href — shows a floating picker on the page
+  // Build bookmarklet href — two-step picker: dest then type
   const fb = FIREBASE_DB_URL;
-  const code = `(function(){document.getElementById('__lib__')&&document.getElementById('__lib__').remove();var ogT=document.querySelector('meta[property="og:title"]');var ogI=document.querySelector('meta[property="og:image"]');var T=ogT?ogT.content:document.title;var IMG=ogI?ogI.content:'';var U=location.href;var Y=new Date().getFullYear();var FB=${JSON.stringify(fb)};function save(type,dest){document.getElementById('__lib__').remove();var item={id:Date.now(),type:type,_dest:dest,title:T,author:'',url:U,coverUrl:IMG,yearRead:Y,yearListened:Y,yearWatched:Y,show:'',channel:'',notes:''};fetch(FB+'/library_user_items.json').then(r=>r.json()).then(data=>{var items=Array.isArray(data)?data:[];items.push(item);return fetch(FB+'/library_user_items.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(items)});}).then(()=>{var d=document.createElement('div');d.style='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2d6a4f;color:#fff;padding:10px 22px;border-radius:20px;font:700 14px system-ui;z-index:2147483647;box-shadow:0 4px 16px rgba(0,0,0,.25)';d.textContent='\u2713 Saved';document.body.appendChild(d);setTimeout(()=>d.remove(),2200);}).catch(()=>alert('Could not save'));}var ov=document.createElement('div');ov.id='__lib__';ov.style='position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.35);display:flex;align-items:flex-start;justify-content:flex-end;padding:18px';var card=document.createElement('div');card.style='background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.28);padding:20px;width:270px;font:14px/1.5 system-ui;position:relative';var ttl=document.createElement('div');ttl.style='font-weight:700;color:#1a1208;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';ttl.textContent=T.length>52?T.slice(0,52)+'\u2026':T;var host=document.createElement('div');host.style='font-size:12px;color:#7a6248;margin-bottom:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';try{host.textContent=new URL(U).hostname;}catch(e){host.textContent=U;}var lbl=document.createElement('div');lbl.style='font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#7a6248;margin-bottom:8px';lbl.textContent='Add to';var grid=document.createElement('div');grid.style='display:grid;grid-template-columns:1fr 1fr;gap:8px';[['Reading List','essay','want','#8C1515'],['Essays','essay','library','#2d6a4f'],['Podcasts','podcast','library','#1a4a7a'],['Books','book','library','#5a3a1a']].forEach(function(b){var btn=document.createElement('button');btn.textContent=b[0];btn.style='background:'+b[3]+';color:#fff;border:none;border-radius:7px;padding:9px 10px;font:700 13px system-ui;cursor:pointer';btn.onclick=function(){save(b[1],b[2]);};grid.appendChild(btn);});var x=document.createElement('button');x.textContent='\u00d7';x.style='position:absolute;top:10px;right:14px;background:none;border:none;font-size:22px;line-height:1;cursor:pointer;color:#aaa';x.onclick=function(){ov.remove();};card.appendChild(x);card.appendChild(ttl);card.appendChild(host);card.appendChild(lbl);card.appendChild(grid);ov.appendChild(card);document.body.appendChild(ov);ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});})()`;
+  const code = `(function(){document.getElementById('__lib__')&&document.getElementById('__lib__').remove();var ogT=document.querySelector('meta[property="og:title"]');var ogI=document.querySelector('meta[property="og:image"]');var T=ogT?ogT.content:document.title;var IMG=ogI?ogI.content:'';var U=location.href;var Y=new Date().getFullYear();var FB=${JSON.stringify(fb)};function save(type,dest){document.getElementById('__lib__').remove();var item={id:Date.now(),type:type,_dest:dest,title:T,author:'',url:U,coverUrl:IMG,yearRead:Y,yearListened:Y,yearWatched:Y,show:'',channel:'',notes:''};fetch(FB+'/library_user_items.json').then(r=>r.json()).then(data=>{var items=Array.isArray(data)?data:[];items.push(item);return fetch(FB+'/library_user_items.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(items)});}).then(()=>{var d=document.createElement('div');d.style='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2d6a4f;color:#fff;padding:10px 22px;border-radius:20px;font:700 14px system-ui;z-index:2147483647;box-shadow:0 4px 16px rgba(0,0,0,.25)';d.textContent='\u2713 Saved to library';document.body.appendChild(d);setTimeout(()=>d.remove(),2400);}).catch(()=>alert('Could not save'));}var ov=document.createElement('div');ov.id='__lib__';ov.style='position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.42);display:flex;align-items:flex-start;justify-content:flex-end;padding:18px';var card=document.createElement('div');card.style='background:#1c1108;color:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.5);padding:20px 22px;width:260px;font:14px/1.5 system-ui;position:relative';var ttl=document.createElement('div');ttl.style='font-weight:700;font-size:13px;color:#fff;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';ttl.textContent=T.length>50?T.slice(0,50)+'\u2026':T;var host=document.createElement('div');host.style='font-size:11px;color:rgba(255,255,255,.45);margin-bottom:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';try{host.textContent=new URL(U).hostname.replace(/^www\\./,'');}catch(e){host.textContent='';}var x=document.createElement('button');x.textContent='\u00d7';x.style='position:absolute;top:10px;right:14px;background:none;border:none;font-size:22px;line-height:1;cursor:pointer;color:rgba(255,255,255,.45)';x.onclick=function(){ov.remove();};card.appendChild(x);card.appendChild(ttl);card.appendChild(host);var s1=document.createElement('div');var lbl1=document.createElement('div');lbl1.style='font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px';lbl1.textContent='Add to';var destRow=document.createElement('div');destRow.style='display:grid;grid-template-columns:1fr 1fr;gap:8px';function destBtn(label,sub,dest){var b=document.createElement('button');b.style='background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:10px 8px;color:#fff;cursor:pointer;text-align:left';b.innerHTML='<div style="font:700 13px system-ui">'+label+'</div><div style="font:11px system-ui;color:rgba(255,255,255,.45);margin-top:2px">'+sub+'</div>';b.onmouseover=function(){b.style.background='rgba(255,255,255,.15)';};b.onmouseout=function(){b.style.background='rgba(255,255,255,.08)';};b.onclick=function(){s1.style.display='none';s2.style.display='block';chosenDest=dest;};return b;}var chosenDest;destRow.appendChild(destBtn('Library','Read it',\x27library\x27));destRow.appendChild(destBtn('Reading List','Want to read',\x27want\x27));s1.appendChild(lbl1);s1.appendChild(destRow);var s2=document.createElement('div');s2.style='display:none';var lbl2=document.createElement('div');lbl2.style='font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px';lbl2.textContent='What type?';var typeGrid=document.createElement('div');typeGrid.style='display:grid;grid-template-columns:1fr 1fr;gap:8px';[['Book','book'],['Essay','essay'],['Podcast','podcast'],['Lecture','lecture']].forEach(function(t){var b=document.createElement('button');b.textContent=t[0];b.style='background:rgba(140,21,21,.6);border:1px solid rgba(200,60,60,.35);border-radius:8px;padding:9px;color:#fff;font:700 13px system-ui;cursor:pointer';b.onmouseover=function(){b.style.background='rgba(140,21,21,.9)';};b.onmouseout=function(){b.style.background='rgba(140,21,21,.6)';};b.onclick=function(){save(t[1],chosenDest);};typeGrid.appendChild(b);});s2.appendChild(lbl2);s2.appendChild(typeGrid);card.appendChild(s1);card.appendChild(s2);ov.appendChild(card);document.body.appendChild(ov);ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});})()`;
   document.getElementById('bookmarklet-link').href = 'javascript:' + code;
 
   const setupBtn = document.getElementById('setup-btn');

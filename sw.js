@@ -1,4 +1,4 @@
-const CACHE = 'library-v20';
+const CACHE = 'library-v21';
 const ASSETS = ['/', '/index.html', '/app.js', '/style.css', '/manifest.json', '/icon.svg', '/hero.jpg',
   '/IMG_20211217_130258.jpg', '/IMG_20220315_114652.jpg', '/IMG_20220619_213007.jpg', '/IMG_20220620_224031.jpg'];
 

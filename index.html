@@ -87,6 +87,7 @@
           <button class="qa-cancel-btn" aria-label="Cancel">✕</button>
         </div>
       </div>
+      <button id="setup-btn" class="setup-link" title="Set up browser bookmarklet">⚙ Bookmarklet</button>
     </footer>
 
   </div>
@@ -325,7 +326,7 @@
         <div class="setup-section">
           <h3 class="setup-section-title">🔖 Browser Bookmarklet</h3>
           <p class="setup-section-desc">Drag the button below to your bookmarks bar. Click it on any webpage to instantly add it to your reading list.</p>
-          <a id="bookmarklet-link" class="bookmarklet-btn" title="Drag me to your bookmarks bar">+ Add to Reading List</a>
+          <a id="bookmarklet-link" class="bookmarklet-btn" title="Drag me to your bookmarks bar">+ My Library</a>
           <p class="setup-section-hint">Works in Chrome, Firefox, Safari, Edge.</p>
         </div>
 
@@ -336,6 +337,30 @@
           <strong>Android:</strong> Chrome → ⋮ → Add to Home Screen</p>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ─── SHARE DESTINATION OVERLAY (PWA share target) ─── -->
+  <div id="share-overlay" class="share-overlay hidden" role="dialog" aria-modal="true" aria-label="Where should this go?">
+    <div class="share-overlay-card">
+      <p class="share-overlay-url" id="share-overlay-url"></p>
+      <div class="share-overlay-step" id="share-step-1">
+        <p class="share-overlay-label">Add to…</p>
+        <div class="share-overlay-btns">
+          <button class="share-dest-btn" data-dest="library">Library<span>I've read it</span></button>
+          <button class="share-dest-btn" data-dest="want">Reading List<span>Want to read</span></button>
+        </div>
+      </div>
+      <div class="share-overlay-step hidden" id="share-step-2">
+        <p class="share-overlay-label">What type?</p>
+        <div class="share-overlay-btns">
+          <button class="share-type-btn" data-type="book">Book</button>
+          <button class="share-type-btn" data-type="essay">Essay</button>
+          <button class="share-type-btn" data-type="podcast">Podcast</button>
+          <button class="share-type-btn" data-type="lecture">Lecture</button>
+        </div>
+      </div>
+      <button class="share-overlay-cancel" id="share-overlay-cancel">Cancel</button>
     </div>
   </div>
 
