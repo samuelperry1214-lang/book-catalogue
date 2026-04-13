@@ -2433,7 +2433,7 @@ function handleAddSubmit() {
   // ── EDIT MODE ──────────────────────────────────────────────
   if (editingItemId !== null) {
     const id  = editingItemId;
-    const all = [...books, ...essays, ...podcasts, ...lectures, ...wishlist];
+    const all = [...books, ...essays, ...podcasts, ...lectures, ...reports, ...wishlist];
     const existing = all.find(x => x.id === id);
 
     if (existing) {
