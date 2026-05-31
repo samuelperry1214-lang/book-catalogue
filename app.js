@@ -2192,8 +2192,8 @@ async function renderPrintQueue() {
           body: JSON.stringify({ queue: groupName }),
         });
         if (!resp.ok) {
-          const err = await resp.json().catch(() => ({ error: 'Unknown error' }));
-          throw new Error(err.error || `Server error ${resp.status}`);
+          const data = await resp.json().catch(() => ({ error: `Server error ${resp.status}` }));
+          throw new Error(data.error || `Server error ${resp.status}`);
         }
         // Trigger download
         const blob = await resp.blob();
@@ -2211,13 +2211,22 @@ async function renderPrintQueue() {
       } catch (err) {
         btn.disabled = false;
         btn.classList.remove('pq-generate-btn--busy');
-        if (err instanceof TypeError && err.message.includes('fetch')) {
-          // Connection refused — server not running
+        // A TypeError from fetch() means the connection was refused (server not running)
+        // or a network/CORS issue — distinct from a server-side error (which throws normally)
+        const isConnectionError = err instanceof TypeError;
+        if (isConnectionError) {
           hint.classList.remove('hidden');
           btn.textContent = 'Generate PDF';
         } else {
-          btn.textContent = `Error: ${err.message}`;
-          setTimeout(() => { btn.textContent = 'Generate PDF'; }, 4000);
+          hint.classList.add('hidden');
+          btn.textContent = 'Error — see below';
+          // Show the server's error message in the hint area
+          hint.innerHTML = `<strong>Error:</strong> ${err.message}`;
+          hint.classList.remove('hidden');
+          setTimeout(() => {
+            btn.textContent = 'Generate PDF';
+            hint.classList.add('hidden');
+          }, 8000);
         }
       }
     });
