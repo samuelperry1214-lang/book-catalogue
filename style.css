@@ -2471,3 +2471,73 @@ body.on-home > header { display: none; }
 .pq-login-trigger-btn:hover:not(:disabled) { background: rgba(255,255,255,0.22); }
 .pq-login-trigger-btn:disabled { opacity: 0.6; cursor: default; }
 .pq-login-status { font-size: 0.78rem; color: rgba(255,255,255,0.6); margin-left: 0.4rem; }
+
+/* Multi-site login list (shown when several sites need login/cookies at once) */
+.pq-login-list {
+  list-style: none;
+  margin: 0.6rem 0 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.pq-login-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius);
+}
+.pq-login-domain { font-weight: 600; color: rgba(255,255,255,0.9); }
+.pq-login-need { font-size: 0.78rem; color: rgba(255,255,255,0.55); }
+/* Push the button to the right so the rows line up tidily */
+.pq-login-row .pq-login-trigger-btn { margin-top: 0; margin-left: auto; }
+.pq-login-row--done { opacity: 0.55; }
+
+/* "Generate without them" — skip blocked sites and build with the rest */
+.pq-skip-btn {
+  margin-top: 0.7rem;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.4rem 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.pq-skip-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.22); }
+.pq-skip-btn:disabled { opacity: 0.6; cursor: default; }
+
+/* Per-site login row above the Generate button */
+.pq-logins {
+  margin: 0.6rem 0 0.8rem 0;
+  padding: 0.6rem 0.8rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius);
+}
+.pq-logins-label {
+  display: block;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 0.5rem;
+}
+.pq-logins-btns { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.pq-site-login-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: var(--radius);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.pq-site-login-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.2); }
+.pq-site-login-btn:disabled { cursor: default; }
+.pq-site-login-btn--done { opacity: 0.6; border-color: rgba(120, 200, 120, 0.5); }

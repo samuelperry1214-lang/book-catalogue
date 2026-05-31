@@ -2157,12 +2157,28 @@ async function renderPrintQueue() {
         </li>`;
     }).join('');
 
+    // Distinct sites in this queue, each with one representative article URL,
+    // so the user can log in per-site (full articles need their subscription).
+    const siteMap = {};
+    groupItems.forEach(item => {
+      let d = '';
+      try { d = new URL(item.url).hostname.replace(/^www\./, ''); } catch {}
+      if (d && !siteMap[d]) siteMap[d] = item.url;
+    });
+    const loginButtons = Object.entries(siteMap).map(([d, u]) =>
+      `<button class="pq-site-login-btn" data-url="${u}" data-domain="${d}">${d}</button>`
+    ).join('');
+
     section.innerHTML = `
       <div class="pq-group-header">
         <span class="pq-group-title">${groupName}
           <span class="pq-group-count">${groupItems.length} article${groupItems.length !== 1 ? 's' : ''}</span>
         </span>
         <button class="pq-clear-btn" data-queue="${groupName}">Clear queue</button>
+      </div>
+      <div class="pq-logins">
+        <span class="pq-logins-label">Log in to your subscriptions first — a window opens, sign in, then close it:</span>
+        <div class="pq-logins-btns">${loginButtons}</div>
       </div>
       <button class="pq-generate-btn" data-queue="${groupName}">
         Generate PDF
@@ -2178,9 +2194,51 @@ async function renderPrintQueue() {
       renderPrintQueue();
     });
 
+    // Per-site login: opens a browser at that site so the user can sign in.
+    // The window stays open until they close it; the session is then saved
+    // and reused for that site until it expires (weeks).
+    section.querySelectorAll('.pq-site-login-btn').forEach((b) => {
+      b.addEventListener('click', async function () {
+        const domain = this.dataset.domain;
+        this.disabled = true;
+        this.textContent = `Opening ${domain}… (sign in, then close it)`;
+        try {
+          const r = await fetch('http://localhost:5050/open-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: this.dataset.url }),
+          });
+          if (r.ok) {
+            this.textContent = `✓ ${domain}`;
+            this.classList.add('pq-site-login-btn--done');
+          } else {
+            this.disabled = false;
+            this.textContent = `${domain} — try again`;
+          }
+        } catch {
+          this.disabled = false;
+          this.textContent = `${domain} — is the server running?`;
+        }
+      });
+    });
+
     section.querySelector('.pq-generate-btn').addEventListener('click', async function () {
       const btn = this;
       const hint = section.querySelector('.pq-server-hint');
+      // Save a PDF response using the filename the server sets (matches the
+      // publication name, e.g. the_new_new_statesman.pdf)
+      const downloadPdfResponse = async (response) => {
+        const blob = await response.blob();
+        const cd = response.headers.get('Content-Disposition') || '';
+        const m = cd.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+        const name = m ? decodeURIComponent(m[1]) : 'digest.pdf';
+        const objUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = objUrl;
+        a.download = name;
+        a.click();
+        URL.revokeObjectURL(objUrl);
+      };
       btn.textContent = 'Generating… (this takes 30–60 seconds)';
       btn.disabled = true;
       btn.classList.add('pq-generate-btn--busy');
@@ -2192,39 +2250,93 @@ async function renderPrintQueue() {
           body: JSON.stringify({ queue: groupName }),
         });
         if (resp.status === 402) {
-          // Paywall — offer login flow
+          // One or more sites need a login / cookie acceptance. List them all
+          // so the user can deal with each, then click Generate PDF once more.
           const data = await resp.json().catch(() => ({}));
-          const domain = data.domain || 'this site';
-          const paywallUrl = data.url || '';
+          const sites = (data.sites && data.sites.length)
+            ? data.sites
+            : [{ domain: data.domain || 'this site', url: data.url || '', reason: 'login' }];
           btn.textContent = 'Generate PDF';
           btn.disabled = false;
           btn.classList.remove('pq-generate-btn--busy');
+
+          // Each row: site name, what's needed, and its own login button
+          const rows = sites.map((s) => {
+            const action = s.reason === 'cookies' ? 'accept cookies &amp; log in' : 'log in';
+            return `
+              <li class="pq-login-row">
+                <span class="pq-login-domain">${s.domain}</span>
+                <span class="pq-login-need">${action}</span>
+                <button class="pq-login-trigger-btn" data-url="${s.url}">Open login window</button>
+                <span class="pq-login-status"></span>
+              </li>`;
+          }).join('');
           hint.innerHTML = `
-            <strong>Paywall on ${domain}</strong> — log in first, then try again.<br>
-            <button class="pq-login-trigger-btn" data-url="${paywallUrl}">
-              Open login window
-            </button>
-            <span class="pq-login-status"></span>`;
+            <strong>${sites.length} site${sites.length !== 1 ? 's' : ''} need attention.</strong>
+            Sort each out and click <strong>Generate PDF</strong> again — or skip them:
+            <ul class="pq-login-list">${rows}</ul>
+            <button class="pq-skip-btn">Generate without ${sites.length === 1 ? 'it' : 'them'}</button>`;
           hint.classList.remove('hidden');
-          hint.querySelector('.pq-login-trigger-btn').addEventListener('click', async function () {
-            const statusEl = hint.querySelector('.pq-login-status');
+
+          // "Generate without them" — build the PDF from the articles that
+          // worked, leaving the blocked sites in the queue (e.g. NYT, which
+          // blocks the automated browser entirely).
+          hint.querySelector('.pq-skip-btn').addEventListener('click', async function () {
             this.disabled = true;
-            this.textContent = 'Opening browser…';
-            statusEl.textContent = ' Log in when the browser opens, then return here.';
+            this.textContent = 'Generating… (30–60s)';
             try {
-              const r = await fetch('http://localhost:5050/open-login', {
+              const r2 = await fetch('http://localhost:5050/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: paywallUrl }),
+                body: JSON.stringify({ queue: groupName, skip_blocked: true }),
               });
-              if (r.ok) {
-                hint.innerHTML = 'Logged in — click <strong>Generate PDF</strong> to continue.';
-              } else {
-                hint.innerHTML = `Login timed out. Try logging in to ${domain} in Chrome first, then click Generate PDF.`;
+              if (!r2.ok) {
+                const d = await r2.json().catch(() => ({}));
+                this.disabled = false;
+                this.textContent = 'Generate without ' + (sites.length === 1 ? 'it' : 'them');
+                this.insertAdjacentHTML('afterend',
+                  `<div class="pq-login-status">Couldn't generate: ${d.error || r2.status}</div>`);
+                return;
               }
+              await downloadPdfResponse(r2);
+              hint.innerHTML = '✓ Downloaded (blocked sites left in the queue).';
             } catch {
-              hint.innerHTML = `Could not open login window — make sure the server is running, then log in to ${domain} in Chrome and try Generate PDF again.`;
+              this.disabled = false;
+              this.textContent = 'Generate without ' + (sites.length === 1 ? 'it' : 'them');
+              this.insertAdjacentHTML('afterend',
+                '<div class="pq-login-status">Could not reach the server.</div>');
             }
+          });
+
+          // Wire up each site's login button independently
+          hint.querySelectorAll('.pq-login-trigger-btn').forEach((loginBtn) => {
+            loginBtn.addEventListener('click', async function () {
+              const row = this.closest('.pq-login-row');
+              const statusEl = row.querySelector('.pq-login-status');
+              this.disabled = true;
+              this.textContent = 'Opening…';
+              statusEl.textContent = ' Log in, then CLOSE the browser window.';
+              try {
+                const r = await fetch('http://localhost:5050/open-login', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ url: this.dataset.url }),
+                });
+                if (r.ok) {
+                  this.textContent = '✓ Done';
+                  statusEl.textContent = '';
+                  row.classList.add('pq-login-row--done');
+                } else {
+                  this.disabled = false;
+                  this.textContent = 'Open login window';
+                  statusEl.textContent = ' Timed out — try again.';
+                }
+              } catch {
+                this.disabled = false;
+                this.textContent = 'Open login window';
+                statusEl.textContent = ' Could not open — is the server running?';
+              }
+            });
           });
           return;
         }
@@ -2233,13 +2345,7 @@ async function renderPrintQueue() {
           throw new Error(data.error || `Server error ${resp.status}`);
         }
         // Trigger download
-        const blob = await resp.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = groupName.toLowerCase().replace(/\s+/g, '_') + '.pdf';
-        a.click();
-        URL.revokeObjectURL(url);
+        await downloadPdfResponse(resp);
         btn.textContent = '✓ Downloaded!';
         btn.classList.remove('pq-generate-btn--busy');
         btn.classList.add('pq-generate-btn--done');
