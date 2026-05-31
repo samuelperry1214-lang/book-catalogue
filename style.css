@@ -2270,3 +2270,134 @@ body.on-home > header { display: none; }
 }
 
 .back-btn:hover { color: #fff; }
+
+/* ─────────────────────────────────────────
+   PRINT QUEUE VIEW
+───────────────────────────────────────── */
+.pq-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-muted);
+}
+.pq-empty strong { color: var(--text); }
+
+.pq-group {
+  margin-bottom: 2.5rem;
+}
+
+.pq-group-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 2px solid var(--text);
+  padding-bottom: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.pq-group-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.pq-group-count {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-left: 0.5rem;
+  font-weight: 400;
+}
+
+.pq-clear-btn {
+  background: none;
+  border: none;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-decoration: underline;
+  font-family: inherit;
+  padding: 0;
+}
+.pq-clear-btn:hover { color: var(--accent); }
+
+.pq-command-box {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.pq-command-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.pq-command-text {
+  font-family: 'Courier New', monospace;
+  font-size: 0.82rem;
+  color: var(--text);
+  word-break: break-all;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.4rem 0.6rem;
+  display: block;
+}
+
+.pq-command-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.35rem;
+}
+
+.pq-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pq-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.pq-item-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.pq-item-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pq-item-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+
+.pq-delete-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0 0.25rem;
+  line-height: 1;
+  font-family: inherit;
+}
+.pq-delete-btn:hover { color: var(--accent); }

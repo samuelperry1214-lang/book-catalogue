@@ -2110,84 +2110,74 @@ async function clearPrintQueueGroup(queueName) {
 
 async function renderPrintQueue() {
   const container = document.getElementById('print-queue-main');
-  container.innerHTML = '<p style="color:var(--text-secondary);padding:24px 0;">Loading…</p>';
+  container.innerHTML = '<p class="pq-empty">Loading…</p>';
+
   const all = await loadPrintQueue();
   const items = Object.entries(all);
+  const countEl = document.getElementById('home-count-print');
 
   if (!items.length) {
     container.innerHTML = `
-      <div style="text-align:center;padding:48px 0;color:var(--text-secondary);">
-        <p style="font-size:1.1rem;margin-bottom:8px;">No articles queued</p>
-        <p style="font-size:.85rem;">Share an article to this app and choose <strong>Print Queue</strong>.</p>
+      <div class="pq-empty">
+        <p><strong>No articles queued yet.</strong></p>
+        <p>Click the bookmarklet or use the Share button on your phone,<br>then choose <strong>Print Queue</strong> and pick a queue name.</p>
       </div>`;
-    document.getElementById('home-count-print').textContent = '';
+    if (countEl) countEl.textContent = 'Empty';
     return;
   }
 
-  // Group by queue name
+  // Group by queue name, sorted by date added
   const groups = {};
   for (const [key, item] of items) {
     const name = item.queue || 'General';
     (groups[name] = groups[name] || []).push({ key, ...item });
   }
+  for (const name in groups) {
+    groups[name].sort((a, b) => (a.added || '').localeCompare(b.added || ''));
+  }
 
-  const totalCount = items.length;
-  document.getElementById('home-count-print').textContent = totalCount;
-
+  if (countEl) countEl.textContent = `${items.length} queued`;
   container.innerHTML = '';
+
   for (const [groupName, groupItems] of Object.entries(groups)) {
-    const cmd = `python from_catalogue.py "${groupName}"`;
-
     const section = document.createElement('section');
-    section.style.cssText = 'margin-bottom:32px;';
-    section.innerHTML = `
-      <div style="display:flex;align-items:baseline;justify-content:space-between;
-        border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:12px;">
-        <h3 style="font-size:1rem;font-weight:600;margin:0;">${groupName}
-          <span style="font-weight:400;color:var(--text-secondary);font-size:.85rem;">
-            &nbsp;${groupItems.length} article${groupItems.length !== 1 ? 's' : ''}
-          </span>
-        </h3>
-        <button class="clear-queue-btn" data-queue="${groupName}"
-          style="font-size:.75rem;color:var(--text-secondary);background:none;border:none;
-          cursor:pointer;text-decoration:underline;">Clear queue</button>
-      </div>
-      <ul style="list-style:none;padding:0;margin:0 0 12px;">
-        ${groupItems.map(item => `
-          <li style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;
-            border-bottom:1px solid rgba(255,255,255,.06);" data-key="${item.key}">
-            <div style="flex:1;min-width:0;">
-              <div style="font-size:.9rem;font-weight:500;overflow:hidden;
-                text-overflow:ellipsis;white-space:nowrap;">
-                ${item.title || item.url}
-              </div>
-              <div style="font-size:.75rem;color:var(--text-secondary);margin-top:2px;">
-                ${(() => { try { return new URL(item.url).hostname.replace(/^www\./, ''); } catch { return ''; } })()}
-                &nbsp;·&nbsp;${item.added ? item.added.slice(0, 10) : ''}
-              </div>
-            </div>
-            <button class="delete-queue-item-btn" data-key="${item.key}"
-              style="flex-shrink:0;background:none;border:none;color:var(--text-secondary);
-              font-size:1.1rem;cursor:pointer;padding:0 4px;line-height:1;" title="Remove">✕</button>
-          </li>`).join('')}
-      </ul>
-      <details style="margin-top:4px;">
-        <summary style="font-size:.8rem;color:var(--text-secondary);cursor:pointer;
-          list-style:none;display:flex;align-items:center;gap:6px;">
-          <span style="font-size:.7rem;">▶</span> Print command (run on your PC)
-        </summary>
-        <code style="display:block;margin-top:8px;padding:10px 12px;
-          background:rgba(0,0,0,.3);border-radius:8px;font-size:.72rem;
-          word-break:break-all;line-height:1.5;color:#a5f3fc;">${cmd}</code>
-      </details>`;
+    section.className = 'pq-group';
 
-    section.querySelector('.clear-queue-btn').addEventListener('click', async e => {
+    const listHTML = groupItems.map(item => {
+      let domain = '';
+      try { domain = new URL(item.url).hostname.replace(/^www\./, ''); } catch {}
+      const date = item.added ? item.added.slice(0, 10) : '';
+      return `
+        <li class="pq-item" data-key="${item.key}">
+          <div class="pq-item-text">
+            <div class="pq-item-title">${item.title || item.url}</div>
+            <div class="pq-item-meta">${domain}${domain && date ? ' · ' : ''}${date}</div>
+          </div>
+          <button class="pq-delete-btn" data-key="${item.key}" title="Remove">✕</button>
+        </li>`;
+    }).join('');
+
+    section.innerHTML = `
+      <div class="pq-group-header">
+        <span class="pq-group-title">${groupName}
+          <span class="pq-group-count">${groupItems.length} article${groupItems.length !== 1 ? 's' : ''}</span>
+        </span>
+        <button class="pq-clear-btn" data-queue="${groupName}">Clear queue</button>
+      </div>
+      <div class="pq-command-box">
+        <div class="pq-command-label">To generate the PDF &mdash; run this on your PC</div>
+        <code class="pq-command-text">python from_catalogue.py "${groupName}"</code>
+        <div class="pq-command-hint">Open a terminal in <em>C:\Users\samue\CCTrial\pdf-tools\</em> and paste the command. The PDF saves there and the queue clears automatically.</div>
+      </div>
+      <ul class="pq-list">${listHTML}</ul>`;
+
+    section.querySelector('.pq-clear-btn').addEventListener('click', async () => {
       if (!confirm(`Clear all ${groupItems.length} items from "${groupName}"?`)) return;
       await clearPrintQueueGroup(groupName);
       renderPrintQueue();
     });
 
-    section.querySelectorAll('.delete-queue-item-btn').forEach(btn => {
+    section.querySelectorAll('.pq-delete-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         await deletePrintQueueItem(btn.dataset.key);
         renderPrintQueue();
