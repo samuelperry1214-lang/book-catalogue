@@ -2191,6 +2191,43 @@ async function renderPrintQueue() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ queue: groupName }),
         });
+        if (resp.status === 402) {
+          // Paywall — offer login flow
+          const data = await resp.json().catch(() => ({}));
+          const domain = data.domain || 'this site';
+          const paywallUrl = data.url || '';
+          btn.textContent = 'Generate PDF';
+          btn.disabled = false;
+          btn.classList.remove('pq-generate-btn--busy');
+          hint.innerHTML = `
+            <strong>Paywall on ${domain}</strong> — log in first, then try again.<br>
+            <button class="pq-login-trigger-btn" data-url="${paywallUrl}">
+              Open login window
+            </button>
+            <span class="pq-login-status"></span>`;
+          hint.classList.remove('hidden');
+          hint.querySelector('.pq-login-trigger-btn').addEventListener('click', async function () {
+            const statusEl = hint.querySelector('.pq-login-status');
+            this.disabled = true;
+            this.textContent = 'Opening browser…';
+            statusEl.textContent = ' Log in when the browser opens, then return here.';
+            try {
+              const r = await fetch('http://localhost:5050/open-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: paywallUrl }),
+              });
+              if (r.ok) {
+                hint.innerHTML = 'Logged in — click <strong>Generate PDF</strong> to continue.';
+              } else {
+                hint.innerHTML = `Login timed out. Try logging in to ${domain} in Chrome first, then click Generate PDF.`;
+              }
+            } catch {
+              hint.innerHTML = `Could not open login window — make sure the server is running, then log in to ${domain} in Chrome and try Generate PDF again.`;
+            }
+          });
+          return;
+        }
         if (!resp.ok) {
           const data = await resp.json().catch(() => ({ error: `Server error ${resp.status}` }));
           throw new Error(data.error || `Server error ${resp.status}`);

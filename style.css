@@ -2454,3 +2454,20 @@ body.on-home > header { display: none; }
 }
 .pq-server-hint strong { color: rgba(255, 255, 255, 0.9); }
 .pq-server-hint.hidden { display: none; }
+
+.pq-login-trigger-btn {
+  margin-top: 0.4rem;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.pq-login-trigger-btn:hover:not(:disabled) { background: rgba(255,255,255,0.22); }
+.pq-login-trigger-btn:disabled { opacity: 0.6; cursor: default; }
+.pq-login-status { font-size: 0.78rem; color: rgba(255,255,255,0.6); margin-left: 0.4rem; }
