@@ -2541,3 +2541,14 @@ body.on-home > header { display: none; }
 .pq-site-login-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.2); }
 .pq-site-login-btn:disabled { cursor: default; }
 .pq-site-login-btn--done { opacity: 0.6; border-color: rgba(120, 200, 120, 0.5); }
+/* Status from the last generation: a coloured dot before the domain name */
+.pq-site-login-btn--ok,
+.pq-site-login-btn--bad { display: inline-flex; align-items: center; gap: 0.4rem; }
+.pq-site-login-btn--ok::before,
+.pq-site-login-btn--bad::before {
+  content: ''; width: 0.55rem; height: 0.55rem; border-radius: 50%; flex: 0 0 auto;
+}
+.pq-site-login-btn--ok::before { background: #4caf50; }
+.pq-site-login-btn--ok { border-color: rgba(76, 175, 80, 0.55); }
+.pq-site-login-btn--bad::before { background: #e25555; }
+.pq-site-login-btn--bad { border-color: rgba(226, 85, 85, 0.55); }

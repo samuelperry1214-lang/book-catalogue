@@ -2108,6 +2108,19 @@ async function clearPrintQueueGroup(queueName) {
   );
 }
 
+// Per-site generation outcomes ({domain: "ok"|"login"|"cookies"|"failed"}),
+// remembered across renders so the login buttons can show green/red.
+function getSiteStatus() {
+  try { return JSON.parse(localStorage.getItem('pq_site_status') || '{}'); }
+  catch { return {}; }
+}
+function mergeSiteStatus(map) {
+  if (!map || typeof map !== 'object') return;
+  const cur = getSiteStatus();
+  for (const [dom, state] of Object.entries(map)) cur[dom] = state;
+  localStorage.setItem('pq_site_status', JSON.stringify(cur));
+}
+
 async function renderPrintQueue() {
   const container = document.getElementById('print-queue-main');
   container.innerHTML = '<p class="pq-empty">Loading…</p>';
@@ -2165,9 +2178,20 @@ async function renderPrintQueue() {
       try { d = new URL(item.url).hostname.replace(/^www\./, ''); } catch {}
       if (d && !siteMap[d]) siteMap[d] = item.url;
     });
-    const loginButtons = Object.entries(siteMap).map(([d, u]) =>
-      `<button class="pq-site-login-btn" data-url="${u}" data-domain="${d}">${d}</button>`
-    ).join('');
+    const status = getSiteStatus();
+    const loginButtons = Object.entries(siteMap).map(([d, u]) => {
+      // Colour from the last generation: green if it returned a full article,
+      // red if it was blocked/short, neutral if not tried yet.
+      const st = status[d];
+      const cls = st === 'ok' ? ' pq-site-login-btn--ok'
+                : (st === 'login' || st === 'cookies' || st === 'failed') ? ' pq-site-login-btn--bad'
+                : '';
+      const tip = st === 'ok' ? 'Working last time'
+                : st === 'cookies' ? 'Needs cookie acceptance + login'
+                : (st === 'login' || st === 'failed') ? 'Needs login'
+                : 'Not tried yet';
+      return `<button class="pq-site-login-btn${cls}" data-url="${u}" data-domain="${d}" title="${tip}">${d}</button>`;
+    }).join('');
 
     section.innerHTML = `
       <div class="pq-group-header">
@@ -2253,6 +2277,7 @@ async function renderPrintQueue() {
           // One or more sites need a login / cookie acceptance. List them all
           // so the user can deal with each, then click Generate PDF once more.
           const data = await resp.json().catch(() => ({}));
+          mergeSiteStatus(data.status);  // remember which sites worked/failed
           const sites = (data.sites && data.sites.length)
             ? data.sites
             : [{ domain: data.domain || 'this site', url: data.url || '', reason: 'login' }];
@@ -2298,8 +2323,10 @@ async function renderPrintQueue() {
                   `<div class="pq-login-status">Couldn't generate: ${d.error || r2.status}</div>`);
                 return;
               }
+              try { mergeSiteStatus(JSON.parse(r2.headers.get('X-Site-Status') || '{}')); } catch {}
               await downloadPdfResponse(r2);
               hint.innerHTML = '✓ Downloaded (blocked sites left in the queue).';
+              setTimeout(() => renderPrintQueue(), 1500);  // refresh status colours
             } catch {
               this.disabled = false;
               this.textContent = 'Generate without ' + (sites.length === 1 ? 'it' : 'them');
@@ -2345,11 +2372,12 @@ async function renderPrintQueue() {
           throw new Error(data.error || `Server error ${resp.status}`);
         }
         // Trigger download
+        try { mergeSiteStatus(JSON.parse(resp.headers.get('X-Site-Status') || '{}')); } catch {}
         await downloadPdfResponse(resp);
         btn.textContent = '✓ Downloaded!';
         btn.classList.remove('pq-generate-btn--busy');
         btn.classList.add('pq-generate-btn--done');
-        // Refresh queue (it was cleared server-side)
+        // Refresh queue + status colours
         setTimeout(() => renderPrintQueue(), 1500);
       } catch (err) {
         btn.disabled = false;
