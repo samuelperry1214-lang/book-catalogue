@@ -553,6 +553,12 @@ function renderHomeCards() {
   const wantTotal = wishlist.length;
   document.getElementById('home-count-want').textContent =
     wantTotal ? `${wantTotal} item${wantTotal !== 1 ? 's' : ''}` : 'Empty — add something';
+  // Load print queue count asynchronously
+  loadPrintQueue().then(all => {
+    const count = Object.keys(all).length;
+    const el = document.getElementById('home-count-print');
+    if (el) el.textContent = count ? `${count} queued` : 'Empty';
+  });
 }
 
 function renderGenrePills() {
@@ -1961,6 +1967,11 @@ function setupEventListeners() {
       showView('want');
     }
   });
+  document.getElementById('nav-print').addEventListener('click', e => {
+    e.stopPropagation();
+    showView('print');
+    renderPrintQueue();
+  });
   // Keyboard support for card divs
   document.querySelectorAll('.home-card[role="button"]').forEach(card => {
     card.addEventListener('keydown', e => {
@@ -2062,6 +2073,133 @@ function saveNotes() {
     }).catch(() => {});
   }
 }
+
+// ── Print Queue ────────────────────────────────────────────────────────────
+
+async function addToPrintQueue(url, title, queueName) {
+  if (!FIREBASE_DB_URL) return;
+  const item = { url, title, queue: queueName, added: new Date().toISOString() };
+  await fetch(`${FIREBASE_DB_URL}/print_queue.json`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(item),
+  });
+}
+
+async function loadPrintQueue() {
+  if (!FIREBASE_DB_URL) return {};
+  try {
+    const res = await fetch(`${FIREBASE_DB_URL}/print_queue.json`);
+    return (await res.json()) || {};
+  } catch { return {}; }
+}
+
+async function deletePrintQueueItem(firebaseKey) {
+  if (!FIREBASE_DB_URL) return;
+  await fetch(`${FIREBASE_DB_URL}/print_queue/${firebaseKey}.json`, { method: 'DELETE' });
+}
+
+async function clearPrintQueueGroup(queueName) {
+  const all = await loadPrintQueue();
+  await Promise.all(
+    Object.entries(all)
+      .filter(([, v]) => v.queue === queueName)
+      .map(([k]) => deletePrintQueueItem(k))
+  );
+}
+
+async function renderPrintQueue() {
+  const container = document.getElementById('print-queue-main');
+  container.innerHTML = '<p style="color:var(--text-secondary);padding:24px 0;">Loading…</p>';
+  const all = await loadPrintQueue();
+  const items = Object.entries(all);
+
+  if (!items.length) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:48px 0;color:var(--text-secondary);">
+        <p style="font-size:1.1rem;margin-bottom:8px;">No articles queued</p>
+        <p style="font-size:.85rem;">Share an article to this app and choose <strong>Print Queue</strong>.</p>
+      </div>`;
+    document.getElementById('home-count-print').textContent = '';
+    return;
+  }
+
+  // Group by queue name
+  const groups = {};
+  for (const [key, item] of items) {
+    const name = item.queue || 'General';
+    (groups[name] = groups[name] || []).push({ key, ...item });
+  }
+
+  const totalCount = items.length;
+  document.getElementById('home-count-print').textContent = totalCount;
+
+  container.innerHTML = '';
+  for (const [groupName, groupItems] of Object.entries(groups)) {
+    const safeOutput = groupName.toLowerCase().replace(/\s+/g, '_') + '.pdf';
+    const cmd = `python lrb_formatter.py ${groupItems.map(i => '"' + i.url + '"').join(' ')} -o "${safeOutput}"`;
+
+    const section = document.createElement('section');
+    section.style.cssText = 'margin-bottom:32px;';
+    section.innerHTML = `
+      <div style="display:flex;align-items:baseline;justify-content:space-between;
+        border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:12px;">
+        <h3 style="font-size:1rem;font-weight:600;margin:0;">${groupName}
+          <span style="font-weight:400;color:var(--text-secondary);font-size:.85rem;">
+            &nbsp;${groupItems.length} article${groupItems.length !== 1 ? 's' : ''}
+          </span>
+        </h3>
+        <button class="clear-queue-btn" data-queue="${groupName}"
+          style="font-size:.75rem;color:var(--text-secondary);background:none;border:none;
+          cursor:pointer;text-decoration:underline;">Clear queue</button>
+      </div>
+      <ul style="list-style:none;padding:0;margin:0 0 12px;">
+        ${groupItems.map(item => `
+          <li style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;
+            border-bottom:1px solid rgba(255,255,255,.06);" data-key="${item.key}">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:.9rem;font-weight:500;overflow:hidden;
+                text-overflow:ellipsis;white-space:nowrap;">
+                ${item.title || item.url}
+              </div>
+              <div style="font-size:.75rem;color:var(--text-secondary);margin-top:2px;">
+                ${(() => { try { return new URL(item.url).hostname.replace(/^www\./, ''); } catch { return ''; } })()}
+                &nbsp;·&nbsp;${item.added ? item.added.slice(0, 10) : ''}
+              </div>
+            </div>
+            <button class="delete-queue-item-btn" data-key="${item.key}"
+              style="flex-shrink:0;background:none;border:none;color:var(--text-secondary);
+              font-size:1.1rem;cursor:pointer;padding:0 4px;line-height:1;" title="Remove">✕</button>
+          </li>`).join('')}
+      </ul>
+      <details style="margin-top:4px;">
+        <summary style="font-size:.8rem;color:var(--text-secondary);cursor:pointer;
+          list-style:none;display:flex;align-items:center;gap:6px;">
+          <span style="font-size:.7rem;">▶</span> Print command (run on your PC)
+        </summary>
+        <code style="display:block;margin-top:8px;padding:10px 12px;
+          background:rgba(0,0,0,.3);border-radius:8px;font-size:.72rem;
+          word-break:break-all;line-height:1.5;color:#a5f3fc;">${cmd}</code>
+      </details>`;
+
+    section.querySelector('.clear-queue-btn').addEventListener('click', async e => {
+      if (!confirm(`Clear all ${groupItems.length} items from "${groupName}"?`)) return;
+      await clearPrintQueueGroup(groupName);
+      renderPrintQueue();
+    });
+
+    section.querySelectorAll('.delete-queue-item-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        await deletePrintQueueItem(btn.dataset.key);
+        renderPrintQueue();
+      });
+    });
+
+    container.appendChild(section);
+  }
+}
+
+// ── End Print Queue ────────────────────────────────────────────────────────
 
 async function loadUserItems() {
   if (FIREBASE_DB_URL) {
@@ -2716,6 +2854,28 @@ function handleShareTarget() {
 
   let chosenDest = null;
   const autoDetectedType = detectType(sharedUrl);
+  const stepPrint = document.getElementById('share-step-print');
+
+  function hideAllSteps() {
+    step1.classList.add('hidden');
+    step2.classList.add('hidden');
+    stepPrint.classList.add('hidden');
+  }
+
+  async function saveToQueue(queueName) {
+    overlay.classList.add('hidden');
+    const title = sharedTitle || (() => {
+      try { return new URL(sharedUrl).hostname.replace(/^www\./, ''); } catch { return sharedUrl.slice(0, 60); }
+    })();
+    await addToPrintQueue(sharedUrl, title, queueName);
+    // Refresh count on home screen if visible
+    loadPrintQueue().then(all => {
+      const count = Object.keys(all).length;
+      const el = document.getElementById('home-count-print');
+      if (el) el.textContent = count || '';
+    });
+    showToast(`Added to "${queueName}"`);
+  }
 
   // Helper: open the add modal with all share data pre-filled
   function openShareModal(type) {
@@ -2736,12 +2896,14 @@ function handleShareTarget() {
     });
   }
 
-  // Step 1 — pick destination; skip step 2 if type is auto-detected
+  // Step 1 — pick destination
   step1.querySelectorAll('.share-dest-btn').forEach(btn => {
     btn.onclick = () => {
       chosenDest = btn.dataset.dest;
-      step1.classList.add('hidden');
-      if (autoDetectedType) {
+      hideAllSteps();
+      if (chosenDest === 'print') {
+        stepPrint.classList.remove('hidden');
+      } else if (autoDetectedType) {
         openShareModal(autoDetectedType);
       } else {
         step2.classList.remove('hidden');
@@ -2749,11 +2911,25 @@ function handleShareTarget() {
     };
   });
 
+  // Step 1b — queue name picker
+  stepPrint.querySelectorAll('.share-queue-btn').forEach(btn => {
+    btn.onclick = () => saveToQueue(btn.dataset.queue);
+  });
+  document.getElementById('share-queue-custom-btn').onclick = () => {
+    const name = document.getElementById('share-queue-custom').value.trim();
+    if (name) saveToQueue(name);
+  };
+  document.getElementById('share-queue-custom').addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const name = e.target.value.trim();
+      if (name) saveToQueue(name);
+    }
+  });
+
   // Step 2 — manual type pick (only reached when auto-detect failed)
   step2.querySelectorAll('.share-type-btn').forEach(btn => {
     btn.onclick = () => {
       overlay.classList.add('hidden');
-
       const detected = btn.dataset.type || detectType(sharedUrl);
       openShareModal(detected);
     };

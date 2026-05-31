@@ -61,6 +61,13 @@
             <button class="home-card-section-btn" data-view="want" data-tab="essays">Essays</button>
           </div>
         </div>
+        <div class="home-card" id="nav-print" role="button" tabindex="0" aria-label="Open Print Queue">
+          <span class="home-card-title">Print Queue</span>
+          <span id="home-count-print" class="home-card-count"></span>
+          <div class="home-card-sections" role="group" aria-label="Print queue">
+            <button class="home-card-section-btn" data-view="print">All queues</button>
+          </div>
+        </div>
       </nav>
 
     </div>
@@ -177,6 +184,18 @@
     <main id="want-lectures" class="container section-panel hidden" aria-label="Lectures to watch"></main>
     <main id="want-podcasts" class="container section-panel hidden" aria-label="Podcasts to listen"></main>
     <main id="want-essays"   class="container section-panel hidden" aria-label="Essays to read"></main>
+  </div>
+
+  <!-- ─── PRINT QUEUE VIEW ─── -->
+  <div id="view-print" class="view hidden">
+    <nav class="filters" aria-label="Print queue">
+      <div class="filters-inner">
+        <div class="section-tabs-row">
+          <span style="font-size:1.1rem;font-weight:600;">Print Queue</span>
+        </div>
+      </div>
+    </nav>
+    <main id="print-queue-main" class="container" aria-label="Print queue"></main>
   </div>
 
   <!-- ─── ADD ITEM MODAL ─── -->
@@ -353,6 +372,25 @@
         <div class="share-overlay-btns">
           <button class="share-dest-btn" data-dest="library">Library<span>I've read it</span></button>
           <button class="share-dest-btn" data-dest="want">Reading List<span>Want to read</span></button>
+          <button class="share-dest-btn" data-dest="print">Print Queue<span>Format &amp; print later</span></button>
+        </div>
+      </div>
+      <!-- Step 1b: queue name picker (shown when Print Queue chosen) -->
+      <div class="share-overlay-step hidden" id="share-step-print">
+        <p class="share-overlay-label">Which queue?</p>
+        <div class="share-overlay-btns" id="share-queue-presets">
+          <button class="share-queue-btn" data-queue="Weekly Digest">Weekly Digest</button>
+          <button class="share-queue-btn" data-queue="Long Reads">Long Reads</button>
+          <button class="share-queue-btn" data-queue="Economics">Economics</button>
+          <button class="share-queue-btn" data-queue="Politics">Politics</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <input id="share-queue-custom" type="text" placeholder="Or type a name…"
+            style="flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);
+            border-radius:8px;padding:8px 10px;color:#fff;font:13px system-ui;">
+          <button id="share-queue-custom-btn"
+            style="background:#2d6a4f;border:none;border-radius:8px;padding:8px 14px;
+            color:#fff;font:700 13px system-ui;cursor:pointer;">Add</button>
         </div>
       </div>
       <div class="share-overlay-step hidden" id="share-step-2">
