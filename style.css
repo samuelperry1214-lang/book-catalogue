@@ -2273,37 +2273,45 @@ body.on-home > header { display: none; }
 
 /* ─────────────────────────────────────────
    PRINT QUEUE VIEW
+   Renders on the dark hero background — use white text and semi-transparent
+   dark surfaces, NOT the cream modal variables.
 ───────────────────────────────────────── */
+#print-queue-main {
+  padding: 2rem 0 4rem;
+}
+
 .pq-empty {
   text-align: center;
-  padding: 3rem 1rem;
-  color: var(--text-muted);
+  padding: 4rem 1rem;
+  color: rgba(255, 255, 255, 0.55);
 }
-.pq-empty strong { color: var(--text); }
+.pq-empty strong { color: rgba(255, 255, 255, 0.85); }
+.pq-empty p { margin: 0.4rem 0; }
 
 .pq-group {
-  margin-bottom: 2.5rem;
+  margin-bottom: 3rem;
 }
 
 .pq-group-header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  border-bottom: 2px solid var(--text);
-  padding-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  padding-bottom: 0.5rem;
   margin-bottom: 1rem;
 }
 
 .pq-group-title {
   font-family: 'Syne', sans-serif;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 700;
-  color: var(--text);
+  color: #fff;
+  letter-spacing: 0.02em;
 }
 
 .pq-group-count {
   font-size: 0.82rem;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.50);
   margin-left: 0.5rem;
   font-weight: 400;
 }
@@ -2312,49 +2320,54 @@ body.on-home > header { display: none; }
   background: none;
   border: none;
   font-size: 0.78rem;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.40);
   cursor: pointer;
   text-decoration: underline;
   font-family: inherit;
   padding: 0;
 }
-.pq-clear-btn:hover { color: var(--accent); }
+.pq-clear-btn:hover { color: rgba(255, 255, 255, 0.75); }
 
+/* Command box — dark glass card, stands out without being cream */
 .pq-command-box {
-  background: var(--bg-alt);
-  border: 1px solid var(--border);
+  background: rgba(8, 5, 3, 0.55);
+  backdrop-filter: blur(12px) saturate(1.4);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: var(--radius);
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .pq-command-label {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: 0.4rem;
+  color: rgba(255, 255, 255, 0.50);
+  margin-bottom: 0.5rem;
 }
 
 .pq-command-text {
   font-family: 'Courier New', monospace;
-  font-size: 0.82rem;
-  color: var(--text);
+  font-size: 0.85rem;
+  color: #fff;
   word-break: break-all;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 0.4rem 0.6rem;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 3px;
+  padding: 0.45rem 0.7rem;
   display: block;
 }
 
 .pq-command-hint {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-top: 0.35rem;
+  font-size: 0.73rem;
+  color: rgba(255, 255, 255, 0.40);
+  margin-top: 0.4rem;
+  line-height: 1.5;
 }
 
+/* Article list */
 .pq-list {
   list-style: none;
   padding: 0;
@@ -2363,10 +2376,15 @@ body.on-home > header { display: none; }
 
 .pq-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.75rem;
-  padding: 0.65rem 0;
-  border-bottom: 1px solid var(--border);
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 0.4rem;
+  background: rgba(8, 5, 3, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: var(--radius);
 }
 
 .pq-item-text {
@@ -2375,9 +2393,9 @@ body.on-home > header { display: none; }
 }
 
 .pq-item-title {
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   font-weight: 600;
-  color: var(--text);
+  color: rgba(255, 255, 255, 0.90);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2385,7 +2403,7 @@ body.on-home > header { display: none; }
 
 .pq-item-meta {
   font-size: 0.75rem;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.45);
   margin-top: 0.15rem;
 }
 
@@ -2393,11 +2411,12 @@ body.on-home > header { display: none; }
   flex-shrink: 0;
   background: none;
   border: none;
-  color: var(--text-muted);
-  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.30);
+  font-size: 0.9rem;
   cursor: pointer;
   padding: 0 0.25rem;
   line-height: 1;
   font-family: inherit;
+  transition: color 0.15s;
 }
-.pq-delete-btn:hover { color: var(--accent); }
+.pq-delete-btn:hover { color: rgba(255, 255, 255, 0.80); }
