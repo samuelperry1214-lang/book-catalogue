@@ -2420,3 +2420,37 @@ body.on-home > header { display: none; }
   transition: color 0.15s;
 }
 .pq-delete-btn:hover { color: rgba(255, 255, 255, 0.80); }
+
+.pq-generate-btn {
+  display: block;
+  width: 100%;
+  padding: 0.85rem 1.5rem;
+  margin-bottom: 1rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-family: 'Syne', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+.pq-generate-btn:hover:not(:disabled) { background: var(--accent-hover); }
+.pq-generate-btn:disabled { cursor: default; }
+.pq-generate-btn--busy { opacity: 0.7; }
+.pq-generate-btn--done { background: #2d6a4f; }
+
+.pq-server-hint {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(140, 21, 21, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+.pq-server-hint strong { color: rgba(255, 255, 255, 0.9); }
+.pq-server-hint.hidden { display: none; }

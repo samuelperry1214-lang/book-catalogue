@@ -2164,17 +2164,62 @@ async function renderPrintQueue() {
         </span>
         <button class="pq-clear-btn" data-queue="${groupName}">Clear queue</button>
       </div>
-      <div class="pq-command-box">
-        <div class="pq-command-label">To generate the PDF &mdash; run this on your PC</div>
-        <code class="pq-command-text">python from_catalogue.py "${groupName}"</code>
-        <div class="pq-command-hint">Open a terminal in <em>C:\Users\samue\CCTrial\pdf-tools\</em> and paste the command. The PDF saves there and the queue clears automatically.</div>
-      </div>
+      <button class="pq-generate-btn" data-queue="${groupName}">
+        Generate PDF
+      </button>
+      <p class="pq-server-hint hidden" data-queue="${groupName}">
+        Server not running — double-click <strong>start_server.bat</strong> in your pdf-tools folder, then try again.
+      </p>
       <ul class="pq-list">${listHTML}</ul>`;
 
     section.querySelector('.pq-clear-btn').addEventListener('click', async () => {
       if (!confirm(`Clear all ${groupItems.length} items from "${groupName}"?`)) return;
       await clearPrintQueueGroup(groupName);
       renderPrintQueue();
+    });
+
+    section.querySelector('.pq-generate-btn').addEventListener('click', async function () {
+      const btn = this;
+      const hint = section.querySelector('.pq-server-hint');
+      btn.textContent = 'Generating… (this takes 30–60 seconds)';
+      btn.disabled = true;
+      btn.classList.add('pq-generate-btn--busy');
+      hint.classList.add('hidden');
+      try {
+        const resp = await fetch('http://localhost:5050/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ queue: groupName }),
+        });
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({ error: 'Unknown error' }));
+          throw new Error(err.error || `Server error ${resp.status}`);
+        }
+        // Trigger download
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = groupName.toLowerCase().replace(/\s+/g, '_') + '.pdf';
+        a.click();
+        URL.revokeObjectURL(url);
+        btn.textContent = '✓ Downloaded!';
+        btn.classList.remove('pq-generate-btn--busy');
+        btn.classList.add('pq-generate-btn--done');
+        // Refresh queue (it was cleared server-side)
+        setTimeout(() => renderPrintQueue(), 1500);
+      } catch (err) {
+        btn.disabled = false;
+        btn.classList.remove('pq-generate-btn--busy');
+        if (err instanceof TypeError && err.message.includes('fetch')) {
+          // Connection refused — server not running
+          hint.classList.remove('hidden');
+          btn.textContent = 'Generate PDF';
+        } else {
+          btn.textContent = `Error: ${err.message}`;
+          setTimeout(() => { btn.textContent = 'Generate PDF'; }, 4000);
+        }
+      }
     });
 
     section.querySelectorAll('.pq-delete-btn').forEach(btn => {
