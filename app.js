@@ -2136,8 +2136,7 @@ async function renderPrintQueue() {
 
   container.innerHTML = '';
   for (const [groupName, groupItems] of Object.entries(groups)) {
-    const safeOutput = groupName.toLowerCase().replace(/\s+/g, '_') + '.pdf';
-    const cmd = `python lrb_formatter.py ${groupItems.map(i => '"' + i.url + '"').join(' ')} -o "${safeOutput}"`;
+    const cmd = `python from_catalogue.py "${groupName}"`;
 
     const section = document.createElement('section');
     section.style.cssText = 'margin-bottom:32px;';
@@ -2912,7 +2911,7 @@ function handleShareTarget() {
   });
 
   // Step 1b — queue name picker
-  stepPrint.querySelectorAll('.share-queue-btn').forEach(btn => {
+  stepPrint.querySelectorAll('.share-type-btn').forEach(btn => {
     btn.onclick = () => saveToQueue(btn.dataset.queue);
   });
   document.getElementById('share-queue-custom-btn').onclick = () => {
