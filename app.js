@@ -2077,13 +2077,14 @@ function saveNotes() {
 // ── Print Queue ────────────────────────────────────────────────────────────
 
 async function addToPrintQueue(url, title, queueName) {
-  if (!FIREBASE_DB_URL) return;
+  if (!FIREBASE_DB_URL) throw new Error('database not configured');
   const item = { url, title, queue: queueName, added: new Date().toISOString() };
-  await fetch(`${FIREBASE_DB_URL}/print_queue.json`, {
+  const res = await fetch(`${FIREBASE_DB_URL}/print_queue.json`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(item),
   });
+  if (!res.ok) throw new Error('save failed (HTTP ' + res.status + ')');
 }
 
 async function loadPrintQueue() {
@@ -3077,11 +3078,17 @@ function handleShareTarget() {
   }
 
   async function saveToQueue(queueName) {
-    overlay.classList.add('hidden');
     const title = sharedTitle || (() => {
       try { return new URL(sharedUrl).hostname.replace(/^www\./, ''); } catch { return sharedUrl.slice(0, 60); }
     })();
-    await addToPrintQueue(sharedUrl, title, queueName);
+    try {
+      await addToPrintQueue(sharedUrl, title, queueName);
+    } catch (e) {
+      // Surface the failure instead of silently closing as if it worked
+      showToast('Could not save — ' + (e && e.message ? e.message : 'try again'));
+      return;
+    }
+    overlay.classList.add('hidden');
     // Refresh count on home screen if visible
     loadPrintQueue().then(all => {
       const count = Object.keys(all).length;
